@@ -25,21 +25,26 @@ class DocumentExtractor:
 
 class StructureChunker:
     """Sentence and paragraph aware bounded chunks with controlled overlap."""
-    def __init__(self,max_words=420,overlap=65):self.max_words=max_words;self.overlap=overlap
+    def __init__(self,max_words=420,overlap=65):
+        if max_words<=0 or overlap<0 or overlap>=max_words:
+            raise ValueError('max_words must be positive and overlap must be smaller than max_words')
+        self.max_words=max_words;self.overlap=overlap
     def split(self,text:str,page:int):
         paras=[re.sub(r'\s+',' ',p).strip() for p in re.split(r'\n{1,}|(?<=[.!?])\s+(?=[A-Z0-9])',text) if p.strip()]
         out=[];buf=[];n=0
-        def flush():
+        def flush(next_words=0):
             nonlocal buf,n
             if buf:out.append((page,' '.join(buf)))
-            buf=' '.join(buf).split()[-self.overlap:];n=len(buf)
+            retained=min(self.overlap,max(0,self.max_words-next_words))
+            buf=buf[-retained:] if retained else []
+            n=len(buf)
         for para in paras:
             words=para.split()
             if len(words)>self.max_words:
                 if buf:flush()
                 for i in range(0,len(words),self.max_words-self.overlap):out.append((page,' '.join(words[i:i+self.max_words])))
                 buf=[];n=0;continue
-            if n+len(words)>self.max_words:flush()
+            if n+len(words)>self.max_words:flush(len(words))
             buf.extend(words);n+=len(words)
         if buf:out.append((page,' '.join(buf)))
         return [x for x in out if len(x[1])>20]
@@ -54,7 +59,13 @@ def pack_ranked_passages(passages,budget:int,max_passages:int):
         remain=budget-used
         if remain<=0 or len(packed)>=max_passages:break
         content=chunk.text
-        if chunk.token_estimate>remain:content=content[:max(120,int(remain*3.4))].rsplit(' ',1)[0]
+        if estimate_tokens(content)>remain:
+            words=content.split();low=0;high=len(words)
+            while low<high:
+                mid=(low+high+1)//2
+                if estimate_tokens(' '.join(words[:mid]))<=remain:low=mid
+                else:high=mid-1
+            content=' '.join(words[:low])
         tokens=estimate_tokens(content)
         if tokens<20:continue
         packed.append({'rank':len(packed)+1,'score':round(float(score),4),'document_id':doc.id,'title':doc.title,'version':doc.version,'page':chunk.page,'chunk_id':chunk.id,'text':content,'snapshot_url':f'/documents/{doc.id}/snapshot?page={chunk.page}'})
