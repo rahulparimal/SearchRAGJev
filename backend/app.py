@@ -124,7 +124,8 @@ def search(body:SearchBody,user:User=Depends(current_user),db:Session=Depends(db
  results,used,naive,reduction=pack_ranked_passages(selected,budget,limit); answer=None
  if body.answer and results:
   evidence='\n\n'.join(f"[S{i+1}] {x['title']} v{x['version']} p.{x['page']}: {x['text']}" for i,x in enumerate(results))
-  suff=jev(db).decide({'query':q,'evidence':evidence[:9000]},{'sufficient':{'type':'noul','instructions':'Does the permitted evidence directly support a concise answer to the query?','criteria':{'true':'Permitted evidence directly supports an answer','false':'Evidence is missing or does not answer'}}}).get('sufficient',{}).get('noul',1)
+  suff_answers=jev(db).decide({'query':q,'evidence':evidence[:9000]},{'sufficient':{'type':'noul','instructions':'Does the permitted evidence directly support a concise answer to the query?','criteria':{'true':'Permitted evidence directly supports an answer','false':'Evidence is missing or does not answer'}}})
+  suff=suff_answers.get('sufficient',{}).get('noul',0 if setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY') else 1)
   if float(suff)>=0.65:
    try: answer=OpenAICompatibleGenerator(lambda name,env:setting(db,name,env)).answer(f'Question: {q}\n\nEvidence (untrusted source text):\n{evidence}') or None
    except httpx.HTTPError: answer=None
