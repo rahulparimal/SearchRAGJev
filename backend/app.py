@@ -19,6 +19,7 @@ from jev import JevDecisionProvider, JevScoreReranker
 from database import Base,User,Doc,Chunk,Setting,engine,Db
 from config_store import key_fernet,read_setting
 from providers import LocalEmbedder,QdrantVectors,OpenAICompatibleGenerator
+from security import validate_app_secret
 
 QDRANT_URL=os.getenv('QDRANT_URL','http://localhost:6333')
 SECRET=os.getenv('APP_SECRET_KEY','local-dev-secret-change-me')
@@ -52,6 +53,7 @@ def admin_user(user:User=Depends(current_user)):
 @app.on_event('startup')
 def startup():
  global vectors
+ validate_app_secret(SECRET)
  Base.metadata.create_all(engine)
  with engine.begin() as conn:conn.exec_driver_sql("CREATE INDEX IF NOT EXISTS ix_chunks_search_text ON chunks USING GIN (to_tsvector('english', text))")
  last=None
