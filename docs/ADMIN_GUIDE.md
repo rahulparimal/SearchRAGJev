@@ -18,7 +18,7 @@ The Jev checkboxes are optional and disabled by default. Jev chunk-profile selec
 
 ## Manage search users
 
-The application creates the bootstrap administrator from `.env`. Additional accounts can be provisioned by an authenticated administrator through the API: `POST /api/admin/users` with a JSON body such as `{"username":"reader1","password":"a-long-unique-password","role":"reader"}`. Use role `admin` only for trusted operators. Passwords must have at least 12 characters and are stored as Argon2id hashes. The current UI does not yet include a user-management screen.
+The application creates the bootstrap administrator from `.env`. In **Admin console → Workspace accounts**, an administrator can create a reader or another administrator with a username and initial password. Passwords must have at least 12 characters and are stored as Argon2id hashes. User editing, password resets and deactivation are not yet available in the UI.
 
 ## Maintain and troubleshoot
 
