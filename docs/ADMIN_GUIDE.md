@@ -10,11 +10,17 @@ In **Admin console → Add a source**, upload PDF, DOCX, TXT, Markdown or HTML. 
 
 Scanned image PDFs currently require OCR that has not yet been integrated. The indexer reports when it finds no extractable text. Do not upload material that requires external OCR until the OCR and data handling policy is approved.
 
-## Configure AI providers
+## Configure AI providers in tabs
 
-In **AI providers**, enter the TypeSafe key for intent classification, answerability checks, optional chunk-profile selection, and optional Jev Score reranking. Enter a custom OpenAI compatible base URL, model and API key to enable generated answers. Settings are encrypted in PostgreSQL and masked after save. Never paste a production key into a public browser or commit it to source control.
+In **Admin console → AI configuration**, use the **TypeSafe Jev**, **Answer LLM**, and **Retrieval** tabs. The Jev tab accepts the TypeSafe API key, base URL, and model. Jev is optional for baseline hybrid search. The Answer LLM tab configures an OpenAI-compatible chat completions endpoint, model ID, and API key. Endpoint and model fields offer common suggestions and accept custom typed values. The API key is optional for local or managed identity endpoints; the URL and model are required to generate answers. Blank key fields preserve saved keys. Provider secrets and settings are encrypted in PostgreSQL and the UI never displays saved keys.
 
-The Jev checkboxes are optional and disabled by default. Jev chunk-profile selection sends a bounded extracted sample to TypeSafe; Jev reranking sends query text and up to 12 ACL-authorized candidates. Get approval for that processing and test the selected model before enabling these for sensitive material. Without an API key, the app uses its default chunk profile and RRF ranking.
+The Retrieval tab shows the active embedding model and vector dimension, lets an administrator set the answer context budget, and enables optional Jev chunk-profile selection or bounded Jev Score reranking. Changing the embedding model or dimension remains a deployment operation and requires a compatible Qdrant collection and reindex. Jev chunk-profile selection sends a bounded extracted sample to TypeSafe; Jev reranking sends query text and up to 8 ACL-authorized candidates. Get approval for that processing and test the selected model before enabling these for sensitive material. Without a Jev API key, the app uses its default chunk profile and RRF ranking.
+
+## Runtime and security settings
+
+In **Admin console → Runtime & security**, review whether required deployment values are present. The page reports configuration status only and never returns secrets. Set `APP_SECRET_KEY`, `DATABASE_URL`, `QDRANT_URL`, `REDIS_URL`, `EMBEDDING_MODEL`, and `EMBEDDING_DIMENSION` in the deployment environment. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` before the first deployment to create the bootstrap administrator; later password changes are not controlled by those environment values. Set `CORS_ORIGINS` to the production frontend origin.
+
+Generate a unique signing secret with `python3 -c 'import secrets; print(secrets.token_urlsafe(48))'` and put the result in the server `.env` as `APP_SECRET_KEY`. The API refuses to start with an example, default, or short secret. Keep the same signing secret while encrypted provider settings need to be read. Rotating it invalidates active sessions and prevents decryption of provider settings written with the previous key. Never commit `.env` or real credentials to GitHub.
 
 ## Manage search users
 
@@ -35,4 +41,4 @@ For a repeatable retrieval run, prepare JSONL cases in the format shown by `scri
 
 ## Current deployment boundary
 
-This is a development MVP. It uses a bootstrap admin and single role model, local volume for originals, document level ACL, bearer JWT in browser storage, and no OCR, SSO/MFA, user management UI, signed source-file download, or full audit history. Deploy only behind TLS and private network controls until those production controls are completed.
+This development MVP uses browser-stored bearer tokens, local file storage, and document ACLs. OCR, SSO/MFA, user lifecycle tools, signed downloads, and complete audit history are not implemented. Use TLS and private networking; add enterprise identity and audit controls before production.
