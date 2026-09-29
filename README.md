@@ -46,3 +46,5 @@ API key settings are Fernet encrypted at rest with a key derived from `APP_SECRE
 ## Verify
 
 Run `python3 -m unittest discover -s tests -v` to verify chunk bounds, overlap and context budget packing. The API and end to end stack should also be checked with a configured Docker engine and representative evaluation corpus before production.
+
+To compare retrieval runs, copy `scripts/evaluation_template.jsonl`, replace the sample query and document ID with your labeled cases, sign in and pass the bearer token as `RAGSEARCH_TOKEN`, then run `python3 scripts/evaluate.py --dataset my-gold-set.jsonl --api http://localhost:8000`. It writes timestamped result snapshots under `evaluation-runs/`. The runner reports Recall@20, MRR, nDCG@20 and estimated token reduction; answer citation evaluation and actual provider token comparison remain release checks.

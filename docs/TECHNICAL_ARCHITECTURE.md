@@ -22,7 +22,7 @@ React/Vite delivers search, evidence snapshots, and administration. FastAPI hand
 
 ## Token efficiency
 
-Context packing is designed to target 20–40% fewer input tokens compared with a naive top-result context, through duplicate overlap removal, bounded candidate count, and a configurable context budget. `estimate_tokens` is a word/punctuation proxy, not a tokenizer. The API returns estimated packed tokens and an explicit baseline. Do not state a measured production reduction until evaluation compares actual provider usage with a labeled corpus, and checks Recall@k/nDCG, citation precision, answer faithfulness, latency and cost. Tune the budget and profile by query type; preserve evidence quality as the release gate.
+Context packing is designed to target 20–40% fewer input tokens compared with a naive top-result context, through duplicate overlap removal, bounded candidate count, and a configurable context budget. `estimate_tokens` is a word/punctuation proxy, not a tokenizer. The API returns estimated packed tokens and an explicit baseline. `scripts/evaluate.py` runs a labeled JSONL query set and stores timestamped ranking and token snapshots. Do not state a measured production reduction until evaluation compares actual provider usage with a labeled corpus, and checks Recall@k/nDCG, citation precision, answer faithfulness, latency and cost. Tune the budget and profile by query type; preserve evidence quality as the release gate.
 
 ## Interfaces and extension points
 

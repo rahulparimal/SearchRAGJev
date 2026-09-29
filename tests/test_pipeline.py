@@ -1,6 +1,7 @@
 import sys,unittest
 sys.path.insert(0,'backend')
 from pipeline import StructureChunker,estimate_tokens,pack_ranked_passages
+from scripts.evaluate import metrics
 
 class ChunkingTests(unittest.TestCase):
  def test_chunks_obey_limit_and_overlap(self):
@@ -19,5 +20,8 @@ class ChunkingTests(unittest.TestCase):
   rows=[(1.0-i*.1,Chunk(i),Doc()) for i in range(8)]
   packed,used,baseline,reduction=pack_ranked_passages(rows,1100,8)
   self.assertLessEqual(used,1100);self.assertLess(used,baseline);self.assertGreater(reduction,0);self.assertLessEqual(len(packed),8)
+ def test_eval_metrics_reward_relevant_early_result(self):
+  got=metrics([{'document_id':'a'},{'document_id':'b'},{'document_id':'c'}],['b','c'],3)
+  self.assertEqual(got['recall_at_k'],1.0);self.assertAlmostEqual(got['mrr'],0.5);self.assertGreater(got['ndcg_at_k'],0.68)
 
 if __name__=='__main__':unittest.main()

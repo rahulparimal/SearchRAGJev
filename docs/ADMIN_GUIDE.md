@@ -31,6 +31,8 @@ The application creates the bootstrap administrator from `.env`. Additional acco
 
 Before release, run the unit suite and a labeled retrieval/answer benchmark. Compare context tokens and relevance on the same corpus snapshot; the UI's estimated token reduction is not an evaluation score.
 
+For a repeatable retrieval run, prepare JSONL cases in the format shown by `scripts/evaluation_template.jsonl`, with human validated relevant document IDs. Set `RAGSEARCH_TOKEN` to an administrator bearer token and run `python3 scripts/evaluate.py --dataset your-gold-set.jsonl --api http://localhost:8000`. Each run writes a timestamped snapshot with Recall@20, MRR, nDCG@20, retrieved IDs/ranks, reranker setting and estimated token reduction. Preserve the same corpus and labels for comparisons; evaluate generated-answer citations separately.
+
 ## Current deployment boundary
 
 This is a development MVP. It uses a bootstrap admin and single role model, local volume for originals, document level ACL, bearer JWT in browser storage, and no OCR, SSO/MFA, user management UI, signed source-file download, or full audit history. Deploy only behind TLS and private network controls until those production controls are completed.
