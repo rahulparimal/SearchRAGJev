@@ -30,7 +30,7 @@ MAX_UPLOAD=int(os.getenv('MAX_UPLOAD_MB','50'))*1024*1024
 PASSWORDS=PasswordHash.recommended()
 def setting(db,key,env):return read_setting(db,key,env)
 
-def jev(db):return JevDecisionProvider(lambda:setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY'))
+def jev(db):return JevDecisionProvider(lambda:setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY'),lambda:setting(db,'JEV_MODEL','JEV_MODEL'),lambda:setting(db,'JEV_BASE_URL','JEV_BASE_URL'))
 
 extractor=DocumentExtractor();chunker=StructureChunker();embedder=LocalEmbedder();vectors=None;lexical=PostgresLexicalSearch()
 app=FastAPI(title='Jev RAG Search API',version='0.1.0')
@@ -122,7 +122,7 @@ def search(body:SearchBody,user:User=Depends(current_user),db:Session=Depends(db
  selected=[(score,byid[cid],docs[byid[cid].doc_id]) for cid,score in fused[:limit*2] if cid in byid and byid[cid].doc_id in docs and allowed(docs[byid[cid].doc_id],user)]
  rerank_method='rrf'
  if setting(db,'JEV_RERANK_ENABLED','JEV_RERANK_ENABLED').lower()=='true':selected,rerank_method=JevScoreReranker(jev(db)).rerank(q,selected)
- budget=int(os.getenv('LLM_CONTEXT_BUDGET_TOKENS','2800'))
+ budget=max(100,int(setting(db,'LLM_CONTEXT_BUDGET_TOKENS','LLM_CONTEXT_BUDGET_TOKENS') or '2800'))
  results,used,naive,reduction=pack_ranked_passages(selected,budget,limit); answer=None
  if body.answer and results:
   evidence='\n\n'.join(f"[S{i+1}] {x['title']} v{x['version']} p.{x['page']}: {x['text']}" for i,x in enumerate(results))
@@ -156,13 +156,18 @@ def delete_doc(doc_id:str,user:User=Depends(admin_user),db:Session=Depends(db_se
  try:Path(d.snapshot_path).unlink(missing_ok=True)
  except OSError:pass
  return {'deleted':doc_id}
-class ConfigBody(BaseModel): typesafe_api_key:str|None=None; llm_base_url:str|None=None; llm_api_key:str|None=None; llm_model:str|None=None; jev_rerank_enabled:bool|None=None; jev_chunk_profile_enabled:bool|None=None
+class ConfigBody(BaseModel): typesafe_api_key:str|None=None; jev_base_url:str|None=None; jev_model:str|None=None; llm_base_url:str|None=None; llm_api_key:str|None=None; llm_model:str|None=None; llm_context_budget_tokens:int|None=None; jev_rerank_enabled:bool|None=None; jev_chunk_profile_enabled:bool|None=None
 @app.get('/admin/config')
 def get_config(user:User=Depends(admin_user),db:Session=Depends(db_session)):
- return {'typesafe_configured':bool(setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY')),'llm_base_url':setting(db,'LLM_BASE_URL','LLM_BASE_URL'),'llm_model':setting(db,'LLM_MODEL','LLM_MODEL'),'llm_key_configured':bool(setting(db,'LLM_API_KEY','LLM_API_KEY')),'jev_model':os.getenv('JEV_MODEL','jev-latest'),'embedding_model':MODEL_NAME,'embedding_dimension':DIM,'context_budget_tokens':int(os.getenv('LLM_CONTEXT_BUDGET_TOKENS','2800')),'jev_rerank_enabled':setting(db,'JEV_RERANK_ENABLED','JEV_RERANK_ENABLED').lower()=='true','jev_chunk_profile_enabled':setting(db,'JEV_CHUNK_PROFILE_ENABLED','JEV_CHUNK_PROFILE_ENABLED').lower()=='true'}
+ secret_ready=False
+ try:validate_app_secret(SECRET);secret_ready=True
+ except RuntimeError:pass
+ runtime=[{'name':'APP_SECRET_KEY','required':True,'configured':secret_ready,'scope':'deployment','description':'Unique random secret of at least 32 bytes; required for JWT signing and encrypted provider settings.'},{'name':'DATABASE_URL','required':True,'configured':bool(os.getenv('DATABASE_URL')),'scope':'deployment','description':'PostgreSQL connection string used by the API and worker.'},{'name':'QDRANT_URL','required':True,'configured':bool(os.getenv('QDRANT_URL')),'scope':'deployment','description':'Qdrant endpoint; its collection dimension must match the embedding model.'},{'name':'REDIS_URL','required':True,'configured':bool(os.getenv('REDIS_URL')),'scope':'deployment','description':'Redis broker required for asynchronous document indexing.'},{'name':'EMBEDDING_MODEL / EMBEDDING_DIMENSION','required':True,'configured':True,'scope':'deployment','description':f'{MODEL_NAME} · {DIM}; changing either requires a compatible vector collection and reindex.'},{'name':'ADMIN_USERNAME / ADMIN_PASSWORD','required':True,'configured':bool(os.getenv('ADMIN_PASSWORD')),'scope':'first deployment','description':'Used once to create the initial administrator when the user table is empty.'},{'name':'CORS_ORIGINS','required':False,'configured':bool(os.getenv('CORS_ORIGINS')),'scope':'deployment','description':'Set to the deployed frontend origin in production.'}]
+ return {'typesafe_configured':bool(setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY')),'jev_base_url':setting(db,'JEV_BASE_URL','JEV_BASE_URL') or 'https://api.typesafe.ai','llm_base_url':setting(db,'LLM_BASE_URL','LLM_BASE_URL'),'llm_model':setting(db,'LLM_MODEL','LLM_MODEL'),'llm_key_configured':bool(setting(db,'LLM_API_KEY','LLM_API_KEY')),'jev_model':setting(db,'JEV_MODEL','JEV_MODEL') or 'jev-latest','embedding_model':MODEL_NAME,'embedding_dimension':DIM,'context_budget_tokens':int(setting(db,'LLM_CONTEXT_BUDGET_TOKENS','LLM_CONTEXT_BUDGET_TOKENS') or '2800'),'jev_rerank_enabled':setting(db,'JEV_RERANK_ENABLED','JEV_RERANK_ENABLED').lower()=='true','jev_chunk_profile_enabled':setting(db,'JEV_CHUNK_PROFILE_ENABLED','JEV_CHUNK_PROFILE_ENABLED').lower()=='true','runtime':runtime}
 @app.put('/admin/config')
 def save_config(body:ConfigBody,user:User=Depends(admin_user),db:Session=Depends(db_session)):
- for name,value in [('TYPESAFE_API_KEY',body.typesafe_api_key),('LLM_BASE_URL',body.llm_base_url),('LLM_API_KEY',body.llm_api_key),('LLM_MODEL',body.llm_model),('JEV_RERANK_ENABLED',None if body.jev_rerank_enabled is None else str(body.jev_rerank_enabled).lower()),('JEV_CHUNK_PROFILE_ENABLED',None if body.jev_chunk_profile_enabled is None else str(body.jev_chunk_profile_enabled).lower())]:
+ if body.llm_context_budget_tokens is not None and not 100<=body.llm_context_budget_tokens<=32000:raise HTTPException(422,'Context budget must be between 100 and 32,000 tokens')
+ for name,value in [('TYPESAFE_API_KEY',body.typesafe_api_key),('JEV_BASE_URL',body.jev_base_url),('JEV_MODEL',body.jev_model),('LLM_BASE_URL',body.llm_base_url),('LLM_API_KEY',body.llm_api_key),('LLM_MODEL',body.llm_model),('LLM_CONTEXT_BUDGET_TOKENS',None if body.llm_context_budget_tokens is None else str(body.llm_context_budget_tokens)),('JEV_RERANK_ENABLED',None if body.jev_rerank_enabled is None else str(body.jev_rerank_enabled).lower()),('JEV_CHUNK_PROFILE_ENABLED',None if body.jev_chunk_profile_enabled is None else str(body.jev_chunk_profile_enabled).lower())]:
   if value:
    row=db.get(Setting,name); enc=key_fernet().encrypt(value.encode()).decode()
    if row:row.encrypted_value=enc
