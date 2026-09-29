@@ -16,7 +16,7 @@ The token estimate is deliberately labeled as a proxy. Before comparing provider
 4. In Admin Console upload a PDF, DOCX, TXT, Markdown or HTML file. Wait for the Celery worker to report `ready`; then search it.
 5. Add a TypeSafe key and an optional OpenAI compatible LLM endpoint in Admin Console. Keys are encrypted in PostgreSQL using a key derived from `APP_SECRET_KEY`. Jev and answer generation are optional; retrieval works without them.
 
-The first administrator is created only when the database has no user with `ADMIN_USERNAME`. Administrators can create reader/admin accounts with `POST /admin/users` using the API. Change the bootstrap password after first login (the current MVP requires updating the environment and replacing the user record to rotate it). For production use, implement full user lifecycle, SSO/MFA, CSRF protection for cookie sessions, TLS termination, encrypted backups and a secret manager.
+The first administrator is created only when the database has no user with `ADMIN_USERNAME`. Administrators can create reader/admin accounts in the Admin Console. Change the bootstrap password after first login (the current MVP requires updating the environment and replacing the user record to rotate it). For production use, add password reset, account deactivation, SSO/MFA, CSRF protection for cookie sessions, TLS termination, encrypted backups and a secret manager.
 
 ## Components
 
@@ -37,7 +37,7 @@ Jev returns typed decisions (Choice, Score or Noul), not document vectors or ans
 
 ## Supported documents and limitations
 
-PDF (text based), DOCX, TXT, Markdown and HTML are supported. Scanned PDFs currently fail with a clear ingestion error because OCR is not wired in. PPTX, document replacement/version history, tenant management, admin user-management UI, citation-faithfulness evaluation, and recovery-grade object storage are not yet implemented. Uploaded originals are stored in the shared Docker volume; PostgreSQL currently stores chunks and full text for PostgreSQL FTS.
+PDF (text based), DOCX, TXT, Markdown and HTML are supported. Scanned PDFs currently fail with a clear ingestion error because OCR is not wired in. PPTX, document replacement/version history, tenant management, citation-faithfulness evaluation, and recovery-grade object storage are not yet implemented. Uploaded originals are stored in the shared Docker volume; PostgreSQL currently stores chunks and full text for PostgreSQL FTS.
 
 ## Security notes
 
