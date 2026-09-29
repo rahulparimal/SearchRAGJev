@@ -2,13 +2,16 @@
 import json,math,os,httpx
 
 class JevDecisionProvider:
-    def __init__(self,token_provider):self.token_provider=token_provider
+    def __init__(self,token_provider,model_provider=None,base_url_provider=None):
+        self.token_provider=token_provider;self.model_provider=model_provider;self.base_url_provider=base_url_provider
     def decide(self,state,questions):
         token=self.token_provider()
         if not token:return {}
         content=state if isinstance(state,str) else json.dumps(state,ensure_ascii=False)
         try:
-            response=httpx.post(os.getenv('JEV_BASE_URL','https://api.typesafe.ai')+'/v1/systemone',headers={'Authorization':f'Bearer {token}'},json={'model':os.getenv('JEV_MODEL','jev-latest'),'state':content[:6000],'questions':questions},timeout=2.0)
+            model=(self.model_provider() if self.model_provider else '') or os.getenv('JEV_MODEL','jev-latest')
+            base_url=(self.base_url_provider() if self.base_url_provider else '') or os.getenv('JEV_BASE_URL','https://api.typesafe.ai')
+            response=httpx.post(base_url.rstrip('/')+'/v1/systemone',headers={'Authorization':f'Bearer {token}'},json={'model':model,'state':content[:6000],'questions':questions},timeout=2.0)
             response.raise_for_status();return response.json().get('answers',{})
         except (httpx.HTTPError,ValueError,TypeError,KeyError):return {}
 
