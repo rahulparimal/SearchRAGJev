@@ -21,7 +21,9 @@ class QdrantVectors:
   if not allowed_doc_ids:return []
   filt=models.Filter(must=[models.FieldCondition(key='doc_id',match=models.MatchAny(any=allowed_doc_ids))])
   return self.client.query_points(self.collection,query=vector,query_filter=filt,limit=limit,with_payload=True).points
- def remove_doc(self,doc_id):self.client.delete(self.collection,models.Filter(must=[models.FieldCondition(key='doc_id',match=models.MatchValue(value=doc_id))]),wait=True)
+ def remove_doc(self,doc_id):
+  selector=models.FilterSelector(filter=models.Filter(must=[models.FieldCondition(key='doc_id',match=models.MatchValue(value=doc_id))]))
+  self.client.delete(self.collection,points_selector=selector,wait=True)
 
 class OpenAICompatibleGenerator:
  def __init__(self,setting_reader):self.setting=setting_reader
