@@ -5,7 +5,13 @@ from datetime import datetime,timezone
 from pathlib import Path
 
 def metrics(results,relevant,k=20):
-    relevant=set(relevant);ranked=[r.get('document_id') for r in results[:k]]
+    relevant=set(relevant);k=max(0,int(k));ranked=[];seen=set()
+    for row in results:
+        if len(ranked)>=k:break
+        doc_id=row.get('document_id')
+        if doc_id is None or doc_id in seen:continue
+        seen.add(doc_id);ranked.append(doc_id)
+        if len(ranked)>=k:break
     found=sum(1 for d in ranked if d in relevant)
     rr=next((1/(i+1) for i,d in enumerate(ranked) if d in relevant),0.0)
     dcg=sum((1/math.log2(i+2)) for i,d in enumerate(ranked) if d in relevant)
