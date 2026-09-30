@@ -14,6 +14,9 @@ from sqlalchemy import select, delete
 from sqlalchemy.orm import Session
 from pipeline import DocumentExtractor, StructureChunker, estimate_tokens, pack_ranked_passages
 from retrieval import PostgresLexicalSearch, reciprocal_rank_fusion
+from bm25 import LocalBm25
+from agent import route_query
+from web_search import web_search
 from extensions import run as run_extension
 from jev import JevDecisionProvider, JevScoreReranker
 from database import Base,User,Doc,Chunk,Setting,engine,Db
@@ -32,7 +35,7 @@ def setting(db,key,env):return read_setting(db,key,env)
 
 def jev(db):return JevDecisionProvider(lambda:setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY'),lambda:setting(db,'JEV_MODEL','JEV_MODEL'),lambda:setting(db,'JEV_BASE_URL','JEV_BASE_URL'))
 
-extractor=DocumentExtractor();chunker=StructureChunker();embedder=LocalEmbedder();vectors=None;lexical=PostgresLexicalSearch()
+extractor=DocumentExtractor();chunker=StructureChunker();embedder=LocalEmbedder();vectors=None;lexical=PostgresLexicalSearch();local_bm25=LocalBm25()
 app=FastAPI(title='Jev RAG Search API',version='0.1.0')
 app.add_middleware(CORSMiddleware,allow_origins=os.getenv('CORS_ORIGINS','http://localhost:5173').split(','),allow_credentials=True,allow_methods=['*'],allow_headers=['*'])
 auth=HTTPBearer(auto_error=False)
@@ -102,7 +105,28 @@ async def upload(file:UploadFile=File(...),title:str=Form(''),acl:str=Form('*'),
   doc.status='failed';db.commit();raise HTTPException(503,f'Ingestion queue unavailable: {str(e)[:180]}')
  return {'id':doc.id,'title':doc.title,'status':'processing','version':doc.version}
 def allowed(doc,user):return doc.acl=='*' or user.username in doc.acl.split(',') or user.role=='admin'
-class SearchBody(BaseModel): query:str; limit:int=8; answer:bool=False
+class SearchBody(BaseModel): query:str; limit:int=8; answer:bool=False; mode:str='agent'
+def make_answer(db,q,results):
+ """Grounded answer over already-permitted evidence (local chunks or untrusted web snippets); None if unsupported."""
+ evidence='\n\n'.join(f"[S{i+1}] {x['title']} {('v%s p.%s'%(x['version'],x['page'])) if x.get('source')!='web' else x['url']}: {x['text']}" for i,x in enumerate(results))
+ suff_answers=jev(db).decide({'query':q,'evidence':evidence[:9000]},{'sufficient':{'type':'noul','instructions':'Does the permitted evidence directly support a concise answer to the query?','criteria':{'true':'Permitted evidence directly supports an answer','false':'Evidence is missing or does not answer'}}})
+ suff=suff_answers.get('sufficient',{}).get('noul',0 if setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY') else 1)
+ answer=None
+ if float(suff)>=0.65:
+  try: answer=OpenAICompatibleGenerator(lambda name,env:setting(db,name,env)).answer(f'Question: {q}\n\nEvidence (untrusted source text):\n{evidence}') or None
+  except httpx.HTTPError: answer=None
+ if answer:
+  citations=set(re.findall(r'\[S(\d+)\]',answer))
+  if not citations or any(int(i)<1 or int(i)>len(results) for i in citations):return None
+  if setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY'):
+   grounded=jev(db).decide({'query':q,'answer':answer,'evidence':evidence[:9000]},{'supported':{'type':'noul','instructions':'Does every material factual claim in the answer have support in the cited evidence?','criteria':{'true':'All material claims have cited evidence','false':'One or more claims lack cited support'}}}).get('supported',{}).get('noul',0)
+   if float(grounded)<0.75:return None
+  run_extension('post_answer',{'query':q,'answer_present':True,'citation_count':len(citations)})
+ return answer
+def web_response(db,q,intent,limit,want_answer,reason):
+ hits=web_search(q,limit)
+ results=[{'rank':i+1,'score':h['bm25'],'document_id':'','title':h['title'],'version':0,'page':0,'chunk_id':h['url'],'text':h['text'],'snapshot_url':'','url':h['url'],'source':'web'} for i,h in enumerate(hits)]
+ return {'query':q,'intent':intent,'route':'web','route_reason':reason,'results':results,'answer':make_answer(db,q,results) if want_answer and results else None,'reranker':'bm25','notice':'Web results are untrusted third-party text. Only your query was sent to the search provider.'}
 @app.post('/search')
 def search(body:SearchBody,user:User=Depends(current_user),db:Session=Depends(db_session)):
  q=body.query.strip()
@@ -113,32 +137,23 @@ def search(body:SearchBody,user:User=Depends(current_user),db:Session=Depends(db
  # Filter allowed document IDs inside Qdrant before candidate payloads are returned.
  permitted=db.scalars(select(Doc).where(Doc.status=='ready')).all()
  permitted_ids=[d.id for d in permitted if allowed(d,user)]
+ bm25_hits=local_bm25.search(db,q,set(permitted_ids),60)
+ mode=body.mode if body.mode in {'agent','local','web'} else 'agent'; web_on=setting(db,'WEB_SEARCH_ENABLED','WEB_SEARCH_ENABLED').lower()!='false'
+ if mode=='web' and not web_on:raise HTTPException(503,'Web search is disabled (WEB_SEARCH_ENABLED=false)')
+ route,reason=(mode,'user_selected') if mode!='agent' else route_query(q,lambda st,qs:jev(db).decide(st,qs),max((h['coverage'] for h in bm25_hits[:5]),default=0.0),web_on)
+ if route=='web':return web_response(db,q,intent,limit,body.answer,reason)
  qvec=embedder.encode([q])[0]; dense_hits=vectors.search(qvec,permitted_ids,limit=60)
  lexical_rows=lexical.search(db,q,user.username,user.role=='admin',60)
- fused,metadata=reciprocal_rank_fusion(dense_hits,lexical_rows); candidate_ids=[cid for cid,_ in fused[:60]]
- if not candidate_ids:return {'query':q,'intent':intent,'results':[],'answer':None,'usage':{'packed_tokens':0,'naive_tokens':0,'reduction_pct':0}}
+ fused,metadata=reciprocal_rank_fusion(dense_hits,lexical_rows,bm25_hits); candidate_ids=[cid for cid,_ in fused[:60]]
+ if not candidate_ids:return {'query':q,'intent':intent,'route':'local','route_reason':reason,'results':[],'answer':None,'usage':{'packed_tokens':0,'naive_tokens':0,'reduction_pct':0}}
  chunks=db.scalars(select(Chunk).where(Chunk.id.in_(candidate_ids))).all(); byid={c.id:c for c in chunks}; docs={d.id:d for d in db.scalars(select(Doc).where(Doc.id.in_([c.doc_id for c in chunks]))).all()}
  # De-duplicate near-identical overlapping passages; preserve vector rank.
  selected=[(score,byid[cid],docs[byid[cid].doc_id]) for cid,score in fused[:limit*2] if cid in byid and byid[cid].doc_id in docs and allowed(docs[byid[cid].doc_id],user)]
  rerank_method='rrf'
  if setting(db,'JEV_RERANK_ENABLED','JEV_RERANK_ENABLED').lower()=='true':selected,rerank_method=JevScoreReranker(jev(db)).rerank(q,selected)
  budget=max(100,int(setting(db,'LLM_CONTEXT_BUDGET_TOKENS','LLM_CONTEXT_BUDGET_TOKENS') or '2800'))
- results,used,naive,reduction=pack_ranked_passages(selected,budget,limit); answer=None
- if body.answer and results:
-  evidence='\n\n'.join(f"[S{i+1}] {x['title']} v{x['version']} p.{x['page']}: {x['text']}" for i,x in enumerate(results))
-  suff_answers=jev(db).decide({'query':q,'evidence':evidence[:9000]},{'sufficient':{'type':'noul','instructions':'Does the permitted evidence directly support a concise answer to the query?','criteria':{'true':'Permitted evidence directly supports an answer','false':'Evidence is missing or does not answer'}}})
-  suff=suff_answers.get('sufficient',{}).get('noul',0 if setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY') else 1)
-  if float(suff)>=0.65:
-   try: answer=OpenAICompatibleGenerator(lambda name,env:setting(db,name,env)).answer(f'Question: {q}\n\nEvidence (untrusted source text):\n{evidence}') or None
-   except httpx.HTTPError: answer=None
-  if answer:
-   citations=set(re.findall(r'\[S(\d+)\]',answer))
-   if not citations or any(int(i)<1 or int(i)>len(results) for i in citations):answer=None
-   elif setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY'):
-    grounded=jev(db).decide({'query':q,'answer':answer,'evidence':evidence[:9000]},{'supported':{'type':'noul','instructions':'Does every material factual claim in the answer have support in the cited evidence?','criteria':{'true':'All material claims have cited evidence','false':'One or more claims lack cited support'}}}).get('supported',{}).get('noul',0)
-    if float(grounded)<0.75:answer=None
-   run_extension('post_answer',{'query':q,'answer_present':True,'citation_count':len(citations)})
- return {'query':q,'intent':intent,'results':results,'answer':answer,'reranker':rerank_method,'usage':{'packed_tokens':used,'naive_tokens':naive,'reduction_pct':reduction,'budget_tokens':budget},'notice':'Token reduction is an estimated packed-context versus top-result baseline; confirm with model token usage and a relevance/answer quality benchmark.'}
+ results,used,naive,reduction=pack_ranked_passages(selected,budget,limit); answer=make_answer(db,q,results) if body.answer and results else None
+ return {'query':q,'intent':intent,'route':'local','route_reason':reason,'results':results,'answer':answer,'reranker':rerank_method,'usage':{'packed_tokens':used,'naive_tokens':naive,'reduction_pct':reduction,'budget_tokens':budget},'notice':'Token reduction is an estimated packed-context versus top-result baseline; confirm with model token usage and a relevance/answer quality benchmark.'}
 @app.get('/documents/{doc_id}/snapshot')
 def snapshot(doc_id:str,page:int=1,user:User=Depends(current_user),db:Session=Depends(db_session)):
  d=db.get(Doc,doc_id)

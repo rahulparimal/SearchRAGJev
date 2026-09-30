@@ -10,12 +10,15 @@ class PostgresLexicalSearch:
           ORDER BY score DESC LIMIT :lim""")
         return db.execute(stmt,{'q':query,'user':username,'admin':is_admin,'lim':limit}).mappings().all()
 
-def reciprocal_rank_fusion(dense_hits,lexical_rows,k=60):
+def reciprocal_rank_fusion(dense_hits,lexical_rows,bm25_rows=(),k=60):
     scores={}; payload={}
     for rank,hit in enumerate(dense_hits,1):
         cid=(hit.payload or {}).get('chunk_id')
         if cid:scores[cid]=scores.get(cid,0)+1/(k+rank);payload[cid]=hit.payload
     for rank,row in enumerate(lexical_rows,1):
+        cid=row['chunk_id'];scores[cid]=scores.get(cid,0)+1/(k+rank)
+        payload.setdefault(cid,{'chunk_id':cid,'doc_id':row['doc_id'],'page':1})
+    for rank,row in enumerate(bm25_rows,1):
         cid=row['chunk_id'];scores[cid]=scores.get(cid,0)+1/(k+rank)
         payload.setdefault(cid,{'chunk_id':cid,'doc_id':row['doc_id'],'page':1})
     return sorted(scores.items(),key=lambda x:x[1],reverse=True),payload

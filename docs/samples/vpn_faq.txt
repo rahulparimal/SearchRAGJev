@@ -1,0 +1,7 @@
+Acme VPN FAQ
+
+How do I connect to the corporate VPN? Install the Acme Secure Client from the software portal, sign in with your SSO credentials and approve the multi-factor prompt on your phone.
+
+Why does the VPN disconnect every 8 hours? Sessions expire after 8 hours for security. Reconnect and approve MFA again.
+
+Who do I contact for VPN access problems? Open a ticket with the IT Service Desk at helpdesk.acme.example or call extension 4400.
