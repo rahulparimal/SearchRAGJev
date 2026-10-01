@@ -6,7 +6,7 @@ from agent import route_query
 from web_search import web_search
 
 class Fake:
-    def fetch(self,q,n):return [{'title':'Cats','url':'u1','text':'felines'},{'title':'Paris','url':'u2','text':'capital of France is Paris'}]
+    def fetch(self,q,n):return [{'title':'Cats','url':'https://a.example/1','text':'felines'},{'title':'Paris','url':'https://a.example/2','text':'capital of France is Paris'}]
 
 class AgentTests(unittest.TestCase):
     def test_bm25_ranks_exact_terms(self):
@@ -22,5 +22,5 @@ class AgentTests(unittest.TestCase):
         self.assertEqual(route_query('x',web,0.8)[0],'local')
     def test_web_disabled_forces_local(self):self.assertEqual(route_query('x',lambda s,q:{},0.0,web_enabled=False)[0],'local')
     def test_web_results_bm25_ranked(self):
-        r=web_search('capital of France',2,provider=Fake());self.assertEqual(r[0]['url'],'u2')
+        r=web_search('capital of France',2,provider=Fake());self.assertEqual(r[0]['url'],'https://a.example/2')
 if __name__=='__main__':unittest.main()

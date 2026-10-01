@@ -1,0 +1,7 @@
+# Versions verified together on the dev machine (python 3.12). Use: pip install -r requirements.txt -c constraints.txt
+numpy<2
+transformers==4.46.3
+scipy<1.14
+scikit-learn<1.6
+sentence-transformers==3.3.1
+torch==2.2.2

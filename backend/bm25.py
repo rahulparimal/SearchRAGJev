@@ -1,6 +1,6 @@
 """Okapi BM25 (ported from the Dharma module's bm25.js) for local chunks and web snippets."""
-import math,re
-from collections import Counter
+import hashlib,math,re,threading
+from collections import Counter,OrderedDict
 
 STOP=set('a an the of to in on for and or is are was were be do does did how what when where who why which can could should would i me my we our you your it its this that with about from by at as get many much'.split())
 def content_terms(text:str)->set[str]:return {t for t in tokenize(text) if t not in STOP}
@@ -29,20 +29,39 @@ class Bm25Index:
         return ranked[:limit]
 
 class LocalBm25:
-    """BM25 over all ready chunks, rebuilt when the chunk/document count changes (the worker runs in another process).
-    Callers must filter by ACL on the returned doc ids before anything else consumes the hits."""
-    def __init__(self):self.key=None;self.index=None;self.rows=[]
-    def _load(self,db):
-        from sqlalchemy import select,func
+    """BM25 over ready chunks the caller may see. Corpus rows are cached under a content key (chunk ids are content-derived, so a
+    same-count replacement changes the key) and an index is built per permitted-document set (small LRU) so idf/avg-length statistics
+    never include documents the user cannot read. Callers must still ACL-filter before anything else consumes the hits."""
+    LRU=8
+    def __init__(self):self.lock=threading.Lock();self.state=(None,[]);self.indexes=OrderedDict()
+    def _key(self,db):
+        from sqlalchemy import select,text
         from database import Chunk,Doc
-        key=(db.scalar(select(func.count()).select_from(Chunk)),db.scalar(select(func.count()).select_from(Doc).where(Doc.status=='ready')))
-        if key!=self.key:
-            rows=db.execute(select(Chunk.id,Chunk.doc_id,Chunk.text).join(Doc,Doc.id==Chunk.doc_id).where(Doc.status=='ready')).all()
-            self.rows=[(r[0],r[1]) for r in rows];self.index=Bm25Index([r[2] for r in rows]);self.key=key
+        if db.bind.dialect.name=='postgresql':
+            n,h=db.execute(text("SELECT count(*),coalesce(md5(string_agg(c.id,',' ORDER BY c.id)),'') FROM chunks c JOIN documents d ON d.id=c.doc_id WHERE d.status='ready'")).one();return (n,h)
+        ids=sorted(db.scalars(select(Chunk.id).join(Doc,Doc.id==Chunk.doc_id).where(Doc.status=='ready')).all());return (len(ids),hashlib.blake2b(','.join(ids).encode(),digest_size=16).hexdigest())
+    def _rows(self,db):
+        from sqlalchemy import select
+        from database import Chunk,Doc
+        key=self._key(db)
+        with self.lock:
+            if self.state[0]==key:return key,self.state[1]
+        rows=[tuple(r) for r in db.execute(select(Chunk.id,Chunk.doc_id,Chunk.text).join(Doc,Doc.id==Chunk.doc_id).where(Doc.status=='ready')).all()]
+        with self.lock:
+            if self.state[0]!=key:self.state=(key,rows);self.indexes.clear()  # (key,rows) swapped together; derived indexes dropped
+            return key,self.state[1]
+    def _index(self,key,rows,permitted):
+        pk=(key,hashlib.blake2b(','.join(sorted(permitted)).encode(),digest_size=16).hexdigest())
+        with self.lock:
+            hit=self.indexes.get(pk)
+            if hit:self.indexes.move_to_end(pk);return hit
+        sub=[(r[0],r[1],r[2]) for r in rows if r[1] in permitted];built=([(c,d) for c,d,_ in sub],Bm25Index([t for _,_,t in sub]))
+        with self.lock:
+            if self.state[0]==key:self.indexes[pk]=built;[self.indexes.popitem(last=False) for _ in range(max(0,len(self.indexes)-self.LRU))]
+        return built
     def search(self,db,query:str,permitted_doc_ids:set[str],limit:int=60)->list[dict]:
-        self._load(db);hits=[];want=content_terms(query)
-        for i,s in self.index.search(query,self.index.n):
-            cid,did=self.rows[i]
-            if did in permitted_doc_ids:hits.append({'chunk_id':cid,'doc_id':did,'score':s,'coverage':len(want&self.index.tf[i].keys())/len(want) if want else 0.0})
-            if len(hits)>=limit:break
+        if not permitted_doc_ids:return []
+        key,rows=self._rows(db);ids,index=self._index(key,rows,permitted_doc_ids);want=content_terms(query);hits=[]
+        for i,s in index.search(query,limit):
+            cid,did=ids[i];hits.append({'chunk_id':cid,'doc_id':did,'score':s,'coverage':len(want&index.tf[i].keys())/len(want) if want else 0.0})
         return hits

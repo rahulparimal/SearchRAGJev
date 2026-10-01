@@ -9,7 +9,7 @@ Prerequisites: Docker, Python 3.12, Node 20+.
 ```bash
 cp .env.example .env            # fill in secrets; keep URLs pointing at localhost
 python3.12 -m venv venv
-venv/bin/pip install -r backend/requirements.txt 'numpy<2' 'transformers==4.46.3' 'scipy<1.14' 'scikit-learn<1.6'
+venv/bin/pip install -r backend/requirements.txt -c backend/constraints.txt
 scripts/run_local.sh start      # infra (Docker) + API + Celery worker + Vite
 scripts/run_local.sh status | logs | stop
 ```
@@ -49,9 +49,9 @@ Inside Compose, `.env` must use service names: `DATABASE_URL=...@postgres:5432/.
 | 8 | High | UI login got `404 Not Found` | API routes have no `/api` prefix; nginx strips it, Vite dev proxy didn't | Added rewrite in `vite.config.ts` |
 | 9 | High | Indexing task failed: `not enough values to unpack` | Celery prefork pool breaks with spawn on macOS | `--pool=solo` locally (Linux containers keep prefork) |
 | 10 | Medium | `sed -i` edits failed | BSD `sed` needs `-i ''` | Use Python/portable edits |
-| 11 | **Security** | Live-looking API keys, DB password and app secret in tracked `.env.example` | Real values written into the template | **Not yet fixed**: move to `.env`, restore placeholders, rotate keys if pushed |
+| 11 | **Security** | Live API keys, DB password and app secret were written into the working-tree `.env.example` (never committed) | Real values written into the template | **Fixed in the tree**: placeholders restored, `.env` and related files ignored. **User action required: rotate the TypeSafe/LLM keys, DB password and APP_SECRET_KEY**, because the values sat in a world-readable template and may have been copied or backed up (`.env.bak`) |
 | 12 | Low | `run_local.sh start` mutates `.env` via `setup_env` and assumes default ports | Script design | New `scripts/run_local.sh` doesn't touch `.env` |
-| 13 | Low | `requirements.txt` lacks the pins from #3–5 | Unpinned transitive deps | **Not yet fixed**: add pins or a constraints file |
+| 13 | Low | `requirements.txt` lacks the pins from #3–5 | Unpinned transitive deps | **Fixed**: `backend/constraints.txt` (use `-c constraints.txt`; the Dockerfile does) |
 
 ## 4. Verified
 
@@ -65,3 +65,7 @@ Local stack: `/health` ok; UI served on 5173; login via `/api/auth/login`; uploa
 - **Web search** ([backend/web_search.py](../backend/web_search.py)): DuckDuckGo via `ddgs`. Only the query text leaves the system. Results are untrusted and cited as `[S#]` with the same grounding checks. Set `WEB_SEARCH_ENABLED=false` to force local-only.
 - **Ingestion** ([backend/ingestion.py](../backend/ingestion.py)): one pipeline (extract, Jev chunk profile, chunk, embed, Qdrant, Postgres), idempotent on re-run. Used by the Celery task, the admin upload (Admin tab, PDF/DOCX/TXT/MD/HTML) and the CLI.
 - **Samples:** `python scripts/ingest_samples.py [paths]` loads `docs/samples/` with no Celery needed (run with `.env` exported).
+
+## 6. Web search toggle
+
+Searches are local by default. The search screen has a **Web search** toggle (off on every page load). With it off, every query stays on your documents. With it on, agent mode may route generic questions to the web (query text only). The toggle only works when the deployment allows web search (`WEB_SEARCH_ENABLED=true` or the admin setting); otherwise `/search` returns 403 for `web:true`. API: `POST /search {"query":"...","web":true}`; there is no admin bypass.

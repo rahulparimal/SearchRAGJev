@@ -8,3 +8,10 @@ dist/
 uploads/
 evaluation-runs/
 .pytest_cache/
+.env.*
+!.env.example
+venv/
+*.log
+*.pid
+.run/
+backups/
