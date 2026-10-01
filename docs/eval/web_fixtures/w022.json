@@ -1,0 +1,57 @@
+{
+ "id": "w022",
+ "query": "how to prevent sql injection",
+ "recorded_at": "2026-10-01T06:19:35.995468+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "SQL Injection Prevention - OWASP Cheat Sheet Series",
+   "url": "https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html",
+   "text": "Learn how to prevent SQL injection attacks in your applications with four options: prepared statements, stored procedures, input validation, and escaping. See examples of safe and unsafe code in various languages and databases.",
+   "published": ""
+  },
+  {
+   "title": "How to prevent SQL injection - Cloudflare",
+   "url": "https://www.cloudflare.com/learning/security/threats/how-to-prevent-sql-injection/",
+   "text": "How SQL injection attacks work Structured Query Language injection (SQLi) is a code injection attack that allows attackers to retrieve, manipulate, or destroy sensitive information located in SQL databases. These attacks work by inserting specialized commands into SQL query fields; when executed, the commands may enable attackers to spoof the identity of legitimate users, view or retrieve ...",
+   "published": ""
+  },
+  {
+   "title": "How to Protect Against SQL Injection Attacks? - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/ethical-hacking/how-to-protect-against-sql-injection-attacks/",
+   "text": "Jul 23, 2025 \u00b7 SQL Injection, often known as SQLI, is a typical attack vector that employs malicious SQL code to manipulate Backend databases in order to obtain information that was not intended to be shown. This information might contain sensitive corporate data, user lists, or confidential consumer information. Types of SQL Injection: 1.",
+   "published": ""
+  },
+  {
+   "title": "SQL Injection Prevention: 6 Ways to Protect Your Stack",
+   "url": "https://www.esecurityplanet.com/threats/how-to-prevent-sql-injection-attacks/",
+   "text": "Jul 9, 2025 \u00b7 SQL injection is a code injection technique that can expose your data. Learn 5 proven tactics to prevent attacks and secure your applications.",
+   "published": ""
+  },
+  {
+   "title": "SQL Injection - SQL Server | Microsoft Learn",
+   "url": "https://learn.microsoft.com/en-us/sql/relational-databases/security/sql-injection?view=sql-server-ver17",
+   "text": "Sep 21, 2026 \u00b7 Learn how SQL injection attacks work. Mitigate such attacks by validating input and reviewing code for SQL injection in SQL Server.",
+   "published": ""
+  },
+  {
+   "title": "Injection Prevention - OWASP Cheat Sheet Series",
+   "url": "https://cheatsheetseries.owasp.org/cheatsheets/Injection_Prevention_Cheat_Sheet.html",
+   "text": "Learn how to prevent injection flaws in your applications, especially SQL injection, with clear, simple, actionable guidance. Find out the types of injection, how to test for them, and how to remediate them with prepared statements, stored procedures, or input validation.",
+   "published": ""
+  },
+  {
+   "title": "SQL Injection - W3Schools",
+   "url": "https://www.w3schools.com/sql/sql_injection.asp",
+   "text": "SQL Injection SQL injection is a code injection technique that can destroy your database. SQL injections are a common web hacking technique. SQL injections are when attackers insert malicious SQL code into user-input fields, and this way can read, modify, or delete sensitive data in a database. SQL injections usually occur when you ask a user for input, like username/userid, and instead of ...",
+   "published": ""
+  },
+  {
+   "title": "Cloudflare Zero Trust - Zero Trust Security",
+   "url": "https://www.bing.com/aclick?ld=e8V32_IZ9r71x8IuCaoEeq-zVUCUx1SslToSY5jiGLpyJrRqT3Y-MhCmJ2Nj0XBDpED-53XtwVFUsY-7W7T4YBR0NPg6CDA7Za9NVMhl73hpm8Kmd-DZhg7S6ZFgSIAFiX1sPRrJpq_k8Qz0lL3aSJcT0OCaZmMTOuD85iphfLQWB4UHkPEIc6ksShOQURiEYF8A3jZndXjGE4gWKMnylCLamUq5Y&u=aHR0cHMlM2ElMmYlMmZ3d3cuY2xvdWRmbGFyZS5jb20lMmZscCUyZmRnJTJmcHJvZHVjdCUyZnplcm8tdHJ1c3Qtc2VjdXJpdHklMmYlM2Z1dG1fbWVkaXVtJTNkY3BjJTI2dXRtX3NvdXJjZSUzZGJpbmclMjZ1dG1fY2FtcGFpZ24lM2Rhby1meS1hY3EtbmFtZXJfZW4tY29ubmVjdGl2aXR5LWdlLXR4dC1nZW5lcmFsLWdlbmVyaWNfc2VjdXJpdHklMjZ1dG1fY29udGVudCUzZGN5YmVyX2xlYXN0X3ByaXZpbGVnZSUyNmdjbGlkJTNkNjU5ZWMwMjQ0ZTBiMTJjZWYzYThhYTk5YjU3YzlhYzMlMjZnY2xzcmMlM2QzcC5kcyUyNiUyNnV0bV90ZXJtJTNkbGVhc3QlMjUyMHByaXZpbGVnZSUyNTIwc2VjdXJpdHlfYmlfY21wLTQ5NDM0OTQ3OV9hZGctMTI1MjM0NTEzMjAxMTY1N19hZC03ODI3MTcwNzE2MDg0Nl9rd2QtNzgyNzE5OTk0MTAxMjklM2Fsb2MtMTkwX2Rldi1jX2V4dC1fcHJkLV9zaWctNjU5ZWMwMjQ0ZTBiMTJjZWYzYThhYTk5YjU3YzlhYzMlMjZfYnQlM2Q3ODI3MTcwNzE2MDg0NiUyNl9iayUzZGxlYXN0JTI1MjBwcml2aWxlZ2UlMjUyMHNlY3VyaXR5JTI2dXRtX21lZGl1bSUzZGNwYyUyNnV0bV9zb3VyY2UlM2RiaW5nJTI2X2JtJTNkcCUyNm1zY2xraWQlM2Q2NTllYzAyNDRlMGIxMmNlZjNhOGFhOTliNTdjOWFjMw&rlid=659ec0244e0b12cef3a8aa99b57c9ac3",
+   "text": "Take a tour and discover the benefits of least privilege security. Learn how Cloudflare\u2019s Zero Trust platform secures your enterprise. Cloudflare Named Leader of DDoS Service Providers - Forrester",
+   "published": ""
+  }
+ ]
+}

@@ -1,0 +1,51 @@
+{
+ "id": "w030",
+ "query": "difference between process and thread",
+ "recorded_at": "2026-10-01T06:19:56.989542+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Process vs Thread - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/operating-systems/difference-between-process-and-thread/",
+   "text": "Apr 9, 2026 \u00b7 A thread also moves through states such as new, runnable, running, waiting, and terminated. Threads within the same process share memory and resources, enabling faster communication.",
+   "published": ""
+  },
+  {
+   "title": "Difference between Process and Thread - Online Tutorials Library",
+   "url": "https://www.tutorialspoint.com/article/difference-between-process-and-thread",
+   "text": "Mar 17, 2026 \u00b7 Both process and thread are fundamental concepts in operating systems that represent independent sequences of execution. The key difference is that processes operate in separate memory spaces, while threads share the same memory space within a",
+   "published": ""
+  },
+  {
+   "title": "What is the difference between a process and a thread?Code sample",
+   "url": "https://stackoverflow.com/questions/200469/what-is-the-difference-between-a-process-and-a-thread",
+   "text": "Oct 14, 2008 \u00b7 What is the technical difference between a process and a thread? I get the feeling a word like 'process' is overused and there are also hardware and software threads. How about light-weight processes in languages like Erlang? Is there a definitive reason to use one term over the other? See more on stackoverflow",
+   "published": ""
+  },
+  {
+   "title": "What is difference between process and thread?",
+   "url": "https://www.howengineeringworks.com/questions/what-is-difference-between-process-and-thread/",
+   "text": "Aug 5, 2026 \u00b7 The operating system manages each process separately. Definition of Thread: A thread is a smaller unit of a process that executes a specific task. Multiple threads exist within a single process and share the same memory and resources. Threads are also called lightweight processes.",
+   "published": ""
+  },
+  {
+   "title": "Process vs. Thread | Baeldung on Computer Science",
+   "url": "https://www.baeldung.com/cs/process-vs-thread",
+   "text": "Jun 10, 2024 \u00b7 Learn the definitions, differences, and advantages of processes and threads, two fundamental entities for concurrency and parallelism. Compare their creation, termination, communication, context switching, and resource consumption.",
+   "published": ""
+  },
+  {
+   "title": "Process vs Thread: The Difference - ThisDevTool",
+   "url": "https://thisdevtool.com/blog/process-vs-thread",
+   "text": "Process vs thread explained for developers: how each works, isolated vs shared memory, when to use processes or threads, and the pitfalls of both.",
+   "published": ""
+  },
+  {
+   "title": "Difference between Process and Thread",
+   "url": "https://www.differencebetween.info/difference-between-process-and-thread",
+   "text": "Thread and Process are two closely related terms in multi-threading. The main difference between the two terms is that the threads are part of process i.e. a process may contain one or more threads, but a thread cannot contain a process.",
+   "published": ""
+  }
+ ]
+}

@@ -1,0 +1,58 @@
+{"id": "l001", "mode": "local", "type": "lexical", "query": "parental leave sixteen weeks", "relevant": {"hr_parental_leave_v2.md": 3, "hr_parental_leave_v1_superseded.md": 1}, "forbidden": [], "overview_expected": false}
+{"id": "l002", "mode": "local", "type": "lexical", "query": "carry over unused annual leave days", "relevant": {"hr_annual_leave.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l003", "mode": "local", "type": "lexical", "query": "medical certificate after three days absence", "relevant": {"hr_sick_leave.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l004", "mode": "local", "type": "lexical", "query": "USB storage devices blocked laptops", "relevant": {"it_usb_policy.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l005", "mode": "local", "type": "lexical", "query": "passwords expire every 180 days", "relevant": {"it_password_reset.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l006", "mode": "local", "type": "lexical", "query": "canary deploy five percent", "relevant": {"eng_deploy_process.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l007", "mode": "local", "type": "lexical", "query": "Corp-Standard split tunnel profile", "relevant": {"it_vpn_setup.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l008", "mode": "local", "type": "lexical", "query": "mileage 0.30 euros per kilometre", "relevant": {"fin_mileage_rates.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l009", "mode": "local", "type": "lexical", "query": "three quotes procurement twenty-five thousand", "relevant": {"fin_procurement_threshold.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l010", "mode": "local", "type": "lexical", "query": "blameless postmortem within five working days", "relevant": {"eng_incident_postmortem.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l011", "mode": "local", "type": "lexical", "query": "guest wifi voucher reception", "relevant": {"it_guest_wifi.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l012", "mode": "local", "type": "lexical", "query": "feature flag removed thirty days after rollout", "relevant": {"eng_feature_flags.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l013", "mode": "local", "type": "synonym", "query": "time off for new parents", "relevant": {"hr_parental_leave_v2.md": 3, "hr_parental_leave_v1_superseded.md": 1}, "forbidden": [], "overview_expected": false}
+{"id": "l014", "mode": "local", "type": "synonym", "query": "remote access keeps dropping", "relevant": {"it_vpn_troubleshooting.md": 3, "it_vpn_setup.md": 1}, "forbidden": [], "overview_expected": false}
+{"id": "l015", "mode": "local", "type": "synonym", "query": "how much holiday do I get each year", "relevant": {"hr_annual_leave.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l016", "mode": "local", "type": "synonym", "query": "what to do when my phone with the authenticator is lost", "relevant": {"it_mfa_enrollment.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l017", "mode": "local", "type": "synonym", "query": "getting reimbursed for lunch on a business trip", "relevant": {"fin_expense_reimbursement.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l018", "mode": "local", "type": "synonym", "query": "replacing my old work computer", "relevant": {"it_laptop_refresh.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l019", "mode": "local", "type": "synonym", "query": "who signs off on supplier bills", "relevant": {"fin_invoice_approval.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l020", "mode": "local", "type": "synonym", "query": "reporting a phishing email", "relevant": {"it_security_incident_reporting.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l021", "mode": "local", "type": "synonym", "query": "how long do pull requests wait for a reviewer", "relevant": {"eng_code_review.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l022", "mode": "local", "type": "synonym", "query": "working from home allowance", "relevant": {"hr_remote_work.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l023", "mode": "local", "type": "semantic", "query": "what happens if I am sick for more than three days", "relevant": {"hr_sick_leave.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l024", "mode": "local", "type": "semantic", "query": "can I take a long break from work without salary", "relevant": {"hr_unpaid_leave_of_absence.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l025", "mode": "local", "type": "semantic", "query": "my laptop clock is wrong and the connection fails", "relevant": {"it_vpn_troubleshooting.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l026", "mode": "local", "type": "semantic", "query": "how do we avoid downtime when changing the database schema", "relevant": {"eng_database_migrations.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l027", "mode": "local", "type": "semantic", "query": "who gets paged first at night and for how long", "relevant": {"eng_oncall_rotation.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l028", "mode": "local", "type": "semantic", "query": "what is the rule for buying something expensive from a vendor", "relevant": {"fin_procurement_threshold.md": 3, "fin_invoice_approval.md": 1}, "forbidden": [], "overview_expected": true}
+{"id": "l029", "mode": "local", "type": "semantic", "query": "are we allowed to deploy to production on a Friday afternoon", "relevant": {"eng_deploy_process.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l030", "mode": "local", "type": "semantic", "query": "how do breaking api changes get announced to customers", "relevant": {"eng_api_versioning.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l031", "mode": "local", "type": "semantic", "query": "when do we decide the next year budget", "relevant": {"fin_budget_planning.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l032", "mode": "local", "type": "semantic", "query": "what should I do in my first week at the company", "relevant": {"hr_onboarding_checklist.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l033", "mode": "local", "type": "semantic", "query": "is it okay to accept a gift from a supplier", "relevant": {"hr_code_of_conduct.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l034", "mode": "local", "type": "semantic", "query": "where do performance ratings come from", "relevant": {"hr_performance_review.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l035", "mode": "local", "type": "multihop", "query": "I need to travel abroad: how do I book and get my costs back", "relevant": {"fin_travel_booking.md": 3, "fin_expense_reimbursement.md": 3}, "forbidden": [], "overview_expected": true}
+{"id": "l036", "mode": "local", "type": "multihop", "query": "new starter needs laptop and multi-factor authentication set up", "relevant": {"hr_onboarding_checklist.md": 3, "it_mfa_enrollment.md": 2, "it_laptop_refresh.md": 1}, "forbidden": [], "overview_expected": false}
+{"id": "l037", "mode": "local", "type": "multihop", "query": "working remotely and the vpn disconnects", "relevant": {"hr_remote_work.md": 2, "it_vpn_troubleshooting.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l038", "mode": "local", "type": "multihop", "query": "leave policies for family events: births and deaths", "relevant": {"hr_parental_leave_v2.md": 3, "hr_bereavement_leave.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l039", "mode": "local", "type": "multihop", "query": "how are changes to code and data schema reviewed before release", "relevant": {"eng_code_review.md": 3, "eng_database_migrations.md": 2}, "forbidden": [], "overview_expected": true}
+{"id": "l040", "mode": "local", "type": "multihop", "query": "lost corporate card and lost laptop what do I report", "relevant": {"fin_corporate_card.md": 3, "it_security_incident_reporting.md": 2}, "forbidden": [], "overview_expected": false}
+{"id": "l041", "mode": "local", "type": "known_item", "query": "annual leave policy", "relevant": {"hr_annual_leave.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l042", "mode": "local", "type": "known_item", "query": "expense reimbursement policy", "relevant": {"fin_expense_reimbursement.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l043", "mode": "local", "type": "known_item", "query": "code of conduct", "relevant": {"hr_code_of_conduct.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l044", "mode": "local", "type": "known_item", "query": "logging standards", "relevant": {"eng_logging_standards.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l045", "mode": "local", "type": "known_item", "query": "branching strategy", "relevant": {"eng_branching_strategy.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l046", "mode": "local", "type": "known_item", "query": "email retention", "relevant": {"it_email_retention.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l047", "mode": "local", "type": "short", "query": "vpn", "relevant": {"it_vpn_setup.md": 3, "it_vpn_troubleshooting.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l048", "mode": "local", "type": "short", "query": "sick leave", "relevant": {"hr_sick_leave.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l049", "mode": "local", "type": "short", "query": "mileage rates", "relevant": {"fin_mileage_rates.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l050", "mode": "local", "type": "short", "query": "password reset", "relevant": {"it_password_reset.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l051", "mode": "local", "type": "short", "query": "on-call", "relevant": {"eng_oncall_rotation.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l052", "mode": "local", "type": "short", "query": "guest wifi", "relevant": {"it_guest_wifi.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l053", "mode": "local", "type": "short", "query": "feature flags", "relevant": {"eng_feature_flags.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l054", "mode": "local", "type": "short", "query": "corporate card", "relevant": {"fin_corporate_card.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "l055", "mode": "local", "type": "acl", "query": "executive bonus pool operating profit", "relevant": {}, "forbidden": ["fin_exec_compensation_restricted.md", "hr_restructuring_plan_restricted.md"], "overview_expected": false}
+{"id": "l056", "mode": "local", "type": "acl", "query": "restructuring plan role eliminations severance", "relevant": {"hr_unpaid_leave_of_absence.md": 0}, "forbidden": ["fin_exec_compensation_restricted.md", "hr_restructuring_plan_restricted.md"], "overview_expected": false}
+{"id": "l057", "mode": "local", "type": "acl", "query": "how big is the executive bonus pool next year", "relevant": {}, "forbidden": ["fin_exec_compensation_restricted.md", "hr_restructuring_plan_restricted.md"], "overview_expected": true}
+{"id": "l058", "mode": "local", "type": "acl", "query": "paid leave during the notice period of a restructuring", "relevant": {"hr_annual_leave.md": 1}, "forbidden": ["fin_exec_compensation_restricted.md", "hr_restructuring_plan_restricted.md"], "overview_expected": false}

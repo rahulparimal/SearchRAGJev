@@ -1,0 +1,51 @@
+{
+ "id": "w009",
+ "query": "typescript generics constraints",
+ "recorded_at": "2026-10-01T06:19:01.997788+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "TypeScript: Documentation - Generics",
+   "url": "https://www.typescriptlang.org/docs/handbook/2/generics.html",
+   "text": "Generic Constraints If you remember from an earlier example, you may sometimes want to write a generic function that works on a set of types where you have some knowledge about what capabilities that set of types will have.",
+   "published": ""
+  },
+  {
+   "title": "TypeScript Generic Constraints - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/typescript/typescript-generic-constraints/",
+   "text": "Sep 19, 2026 \u00b7 Examples of Generic Constraints in TypeScript The following examples demonstrate how generic constraints restrict types and provide access to required properties or methods.",
+   "published": ""
+  },
+  {
+   "title": "TypeScript Generic Constraints",
+   "url": "https://www.typescripttutorial.net/typescript-tutorial/typescript-generic-constraints/",
+   "text": "In this tutorial, you will learn about generic constraints in TypeScript to constrain the types in generic functions to specific types.",
+   "published": ""
+  },
+  {
+   "title": "Mastering TypeScript Generic Constraints - xjavascript.com",
+   "url": "https://www.xjavascript.com/blog/typescript-generic-constraint/",
+   "text": "Jan 16, 2026 \u00b7 Mastering TypeScript Generic Constraints TypeScript is a superset of JavaScript that adds static typing to the language, enhancing code reliability and maintainability. One of the powerful features in TypeScript is generics, which allow you to create reusable components that can work with different types.",
+   "published": ""
+  },
+  {
+   "title": "TypeScript Constraints - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/typescript/typescript-constraints/",
+   "text": "Sep 15, 2025 \u00b7 TypeScript constraints are used in generic type declarations to restrict the types that can be used as type arguments for the generic. Constraints allow you to specify that a generic type parameter must meet certain criteria, such as implementing a particular interface, having a specific method, or extending a specific class. Syntax: function functionName(param: T ...",
+   "published": ""
+  },
+  {
+   "title": "TypeScript Advanced Generics and Constraints - xjavascript.com",
+   "url": "https://www.xjavascript.com/typescript-tutorials/typescript-advanced-generics-and-constraints/",
+   "text": "TypeScript is a statically typed superset of JavaScript that brings strong typing to the language. Generics and constraints are two powerful features in TypeScript that allow developers to write reusable and type - safe code. Advanced generics and constraints take these concepts a step further, enabling more complex and precise type definitions.",
+   "published": ""
+  },
+  {
+   "title": "TypeScript Generic Constraints Explained",
+   "url": "https://learn.programmingline.com/learn/ts/ts-generic-constraints",
+   "text": "Jul 24, 2026 \u00b7 A complete guide to TypeScript generic constraints: the extends keyword, keyof constraints, default type parameters, and common mistakes to avoid.",
+   "published": ""
+  }
+ ]
+}

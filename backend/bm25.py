@@ -1,6 +1,7 @@
 """Okapi BM25 (ported from the Dharma module's bm25.js) for local chunks and web snippets."""
 import hashlib,math,re,threading
 from collections import Counter,OrderedDict
+from cache import cache
 
 STOP=set('a an the of to in on for and or is are was were be do does did how what when where who why which can could should would i me my we our you your it its this that with about from by at as get many much'.split())
 def content_terms(text:str)->set[str]:return {t for t in tokenize(text) if t not in STOP}
@@ -8,13 +9,23 @@ def content_terms(text:str)->set[str]:return {t for t in tokenize(text) if t not
 def tokenize(text:str)->list[str]:
     return re.sub(r'[^a-z0-9\s]',' ',(text or '').lower()).split()
 
+def highlight_spans(text:str,query:str,cap:int=24)->list[list[int]]:
+    """[start,end] offsets of query content terms in `text`, merged; the client renders them as text nodes (never HTML)."""
+    terms=sorted(content_terms(query),key=len,reverse=True)
+    if not terms or not text:return []
+    spans=sorted([m.start(),m.end()] for m in re.finditer(r'\b(?:'+'|'.join(re.escape(t) for t in terms)+r')\b',text,re.I));out=[]
+    for a,b in spans:
+        if out and a<=out[-1][1]:out[-1][1]=max(out[-1][1],b)
+        else:out.append([a,b])
+    return out[:cap]
+
 class Bm25Index:
     def __init__(self,texts:list[str],k1:float=1.5,b:float=0.75):
         self.k1=k1;self.b=b;self.tf=[Counter(tokenize(t)) for t in texts];self.len=[sum(c.values()) for c in self.tf]
         self.n=len(texts);self.avg=sum(self.len)/(self.n or 1) or 1.0;self.df=Counter()
         for c in self.tf:self.df.update(c.keys())
     def scores(self,query:str)->list[float]:
-        terms=set(tokenize(query));out=[]
+        terms=content_terms(query) or set(tokenize(query));out=[]  # content terms only: stop words (how/can/i...) must not decide the lexical ranking
         for c,ln in zip(self.tf,self.len):
             s=0.0
             for t in terms:
@@ -35,6 +46,8 @@ class LocalBm25:
     LRU=8
     def __init__(self):self.lock=threading.Lock();self.state=(None,[]);self.indexes=OrderedDict()
     def _key(self,db):
+        g=cache.generation('corpus')  # bumped by ingest/delete/requeue/upload: no per-request scan of every chunk id
+        if g is not None:return ('gen',g)
         from sqlalchemy import select,text
         from database import Chunk,Doc
         if db.bind.dialect.name=='postgresql':

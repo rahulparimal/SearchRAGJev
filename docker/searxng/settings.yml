@@ -1,0 +1,9 @@
+# Minimal SearXNG config for use as a JSON backend of this app. The engines listed here are exactly where queries go.
+use_default_settings:
+  engines:
+    keep_only: [duckduckgo, bing, wikipedia]
+search:
+  formats: [html, json]
+server:
+  limiter: false
+  image_proxy: false

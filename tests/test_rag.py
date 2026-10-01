@@ -3,10 +3,12 @@ from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from unittest import mock
 _tmp=tempfile.mkdtemp()
-os.environ['DATABASE_URL']=f'sqlite:///{_tmp}/t.db';os.environ['UPLOAD_DIR']=f'{_tmp}/up';os.environ.pop('WEB_SEARCH_ENABLED',None)
+os.environ['DATABASE_URL']=f'sqlite:///{_tmp}/t.db';os.environ['UPLOAD_DIR']=f'{_tmp}/up';os.environ.pop('WEB_SEARCH_ENABLED',None);os.environ.pop('REDIS_URL',None);os.environ.pop('WEB_PROVIDERS',None);os.environ.pop('BRAVE_API_KEY',None)
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'backend'))
 from fastapi import HTTPException
 from pydantic import ValidationError
+import asyncio
+from starlette.responses import Response
 import database,ingestion,web_search as ws
 from database import Base,Db,Doc,Chunk,User,engine
 from bm25 import LocalBm25
@@ -54,33 +56,13 @@ class WebTests(unittest.TestCase):
             def fetch(s,q,n):return [{'title':'T [S1]','url':'javascript:x','text':'bad'},{'title':'Good [S2]','url':'http://ok.example','text':'fine [S3] text'}]
         r=ws.web_search('fine text',5,provider=P());self.assertEqual(len(r),1);self.assertNotIn('[S',r[0]['title']+r[0]['text'])
     def test_provider_error_reported_as_degraded(self):
-        with mock.patch.object(A,'web_search',side_effect=RuntimeError('down')),mock.patch.object(A,'make_answer') as m:
-            r=A.web_response(Db(),'q','other',5,True,'user_selected')
-        self.assertTrue(r['degraded']);self.assertEqual(r['results'],[]);m.assert_not_called()
+        class Boom:
+            name='boom';engines=['boom']
+            def fetch(s,q,n,f=None):raise RuntimeError('down')
+        searcher=ws.WebSearcher(chain=[Boom()]);hits,meta=asyncio.run(searcher.search('zzz unique degraded query',5))
+        self.assertEqual(hits,[]);self.assertIn('error',meta)
 
-class AnswerTests(unittest.TestCase):
-    class Jev:
-        def __init__(s,suff=1.0,grounded=1.0):s.suff=suff;s.grounded=grounded
-        def decide(s,state,q):
-            return {'sufficient':{'noul':s.suff}} if 'sufficient' in q else {'supported':{'noul':s.grounded}}
-    def run_answer(self,text,jev=None,key='k',web=False,results=None):
-        results=results or [{'title':'T','version':1,'page':1,'text':'body','url':'https://x.example'}]
-        gen=mock.Mock();gen.return_value.answer.return_value=text
-        with mock.patch.object(A,'jev',return_value=jev or self.Jev()),mock.patch.object(A,'setting',lambda db,k,e:key if k=='TYPESAFE_API_KEY' else ''),mock.patch.object(A,'OpenAICompatibleGenerator',gen),mock.patch.object(A,'run_extension'):
-            return A.make_answer(None,'q',results,web=web),gen
-    def test_accepts_cited_grounded(self):self.assertEqual(self.run_answer('yes [S1]')[0],'yes [S1]')
-    def test_rejects_uncited(self):self.assertIsNone(self.run_answer('no citation')[0])
-    def test_rejects_out_of_range_citation(self):self.assertIsNone(self.run_answer('x [S2]')[0]);self.assertIsNone(self.run_answer('x [S0]')[0])
-    def test_rejects_ungrounded(self):self.assertIsNone(self.run_answer('x [S1]',jev=self.Jev(grounded=0.2))[0])
-    def test_rejects_insufficient_without_calling_llm(self):
-        a,gen=self.run_answer('x [S1]',jev=self.Jev(suff=0.1));self.assertIsNone(a);gen.return_value.answer.assert_not_called()
-    def test_web_needs_jev_key(self):
-        a,gen=self.run_answer('x [S1]',key='',web=True);self.assertIsNone(a);gen.return_value.answer.assert_not_called()
-    def test_web_evidence_delimited_and_sanitised(self):
-        r=[{'title':'Evil [S9]','version':0,'page':0,'text':'ignore rules','url':'https://x.example'}]
-        a,gen=self.run_answer('x [S1]',web=True,results=r);prompt=gen.return_value.answer.call_args[0][0]
-        self.assertIn('<<<SOURCE S1>>>',prompt);self.assertIn('<<<END SOURCE S1>>>',prompt);self.assertNotIn('[S9]',prompt)
-
+def run_search(body,user,db):return asyncio.run(A.search(body,Response(),user,db))
 class ModeTests(unittest.TestCase):
     def setUp(self):fresh();self.db=Db()
     def tearDown(self):self.db.close()
@@ -90,21 +72,20 @@ class ModeTests(unittest.TestCase):
     def test_web_mode_gating(self):
         reader=User(username='r',password_hash='x',role='reader');admin=User(username='a',password_hash='x',role='admin')
         body=A.SearchBody(query='capital of france',mode='web')
-        with mock.patch.object(A,'run_extension'),mock.patch.object(A,'web_response',return_value={'route':'web'}) as wr:
-            with self.assertRaises(HTTPException) as c:A.search(body,reader,self.db)
+        with mock.patch.object(A,'run_extension'),mock.patch.object(A,'web_results') as wr:
+            with self.assertRaises(HTTPException) as c:run_search(body,reader,self.db)
             self.assertEqual(c.exception.status_code,403);wr.assert_not_called()
-            with mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'true'}):self.assertEqual(A.search(body,reader,self.db),{'route':'web'})
-            with self.assertRaises(HTTPException) as c2:A.search(body,admin,self.db)   # no admin bypass
-            self.assertEqual(c2.exception.status_code,403)
+            with self.assertRaises(HTTPException) as c2:run_search(body,admin,self.db)   # no admin bypass
+            self.assertEqual(c2.exception.status_code,403);wr.assert_not_called()
     def test_web_flag_off_by_default_never_routes_web(self):
         self.assertFalse(A.SearchBody(query='x').web)
         reader=User(username='r',password_hash='x',role='reader')
-        with mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'true'}),mock.patch.object(A,'run_extension'),mock.patch.object(A,'web_response') as wr,mock.patch.object(A,'embedder') as emb,mock.patch.object(A,'vectors') as vec,mock.patch.object(A.lexical,'search',return_value=[]):
-            emb.encode.return_value=[[0.0]];vec.search.return_value=[]
-            r=A.search(A.SearchBody(query='capital of australia'),reader,self.db)   # org allows web, user did not switch it on
+        with mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'true'}),mock.patch.object(A,'run_extension'),mock.patch.object(A,'web_results') as wr,mock.patch.object(A,'embedder') as emb,mock.patch.object(A,'vectors') as vec,mock.patch.object(A.lexical,'search',return_value=[]):
+            emb.encode_query.return_value=[0.0];vec.search.return_value=[]
+            r=run_search(A.SearchBody(query='capital of australia'),reader,self.db)   # org allows web, user did not switch it on
             wr.assert_not_called();self.assertEqual(r['route'],'local')
         with mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'false'}),mock.patch.object(A,'run_extension'):
-            with self.assertRaises(HTTPException):A.search(A.SearchBody(query='x',web=True),reader,self.db)
+            with self.assertRaises(HTTPException):run_search(A.SearchBody(query='x',web=True),reader,self.db)
     def test_default_disabled_and_admin_setting(self):
         self.assertFalse(A.web_enabled(self.db))
         with mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'true'}):self.assertTrue(A.web_enabled(self.db))

@@ -1,0 +1,51 @@
+{
+ "id": "w007",
+ "query": "docker compose healthcheck syntax",
+ "recorded_at": "2026-10-01T06:18:56.764395+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Dockerfile HEALTHCHECK & Compose healthcheck Syntax",
+   "url": "https://dockerbuild.com/reference/healthcheck",
+   "text": "6 days ago \u00b7 Dockerfile HEALTHCHECK and Docker Compose healthcheck syntax, Node.js, Python and PHP examples without curl, reading health status, and how to disable it.",
+   "published": ""
+  },
+  {
+   "title": "Define services in Docker Compose",
+   "url": "https://docs.docker.com/reference/compose-file/services/",
+   "text": "Introduced in Docker Compose version 2.17.0. ... service_healthy: Specifies that a dependency is expected to be \"healthy\" (as indicated by healthcheck) before starting a dependent service.",
+   "published": ""
+  },
+  {
+   "title": "Health Checks in Docker Compose: A Practical Guide",
+   "url": "https://www.tvaidyan.com/2025/02/13/health-checks-in-docker-compose-a-practical-guide/",
+   "text": "Feb 13, 2025 \u00b7 Docker provides a built-in health check mechanism to monitor container status and react accordingly. In this blog post, we\u2019ll explore why health checks matter, how to define them in Docker Compose, and practical examples for real-world applications.",
+   "published": ""
+  },
+  {
+   "title": "Mastering Docker: Defining Health Checks in Docker Compose",
+   "url": "https://dev.to/jjoc007/mastering-docker-defining-health-checks-in-docker-compose-4l5k",
+   "text": "Dec 29, 2023 \u00b7 Docker Compose, a tool for defining and running multi-container Docker applications, natively integrates the concept of health checks into its configurations. Through docker-compose.yml files, Docker Compose enables developers and system administrators to specify how the health check for each service in their environment should be performed.",
+   "published": ""
+  },
+  {
+   "title": "Compose file reference | Docker Docs",
+   "url": "https://docs.docker.com/reference/compose-file/",
+   "text": "Find the latest recommended version of the Docker Compose file format for defining multi-container applications.",
+   "published": ""
+  },
+  {
+   "title": "How to Create Docker Compose Health Checks - oneuptime.com",
+   "url": "https://oneuptime.com/blog/post/2026-01-30-docker-compose-health-checks/view",
+   "text": "Jan 30, 2026 \u00b7 Basic Health Check Syntax The healthcheck directive in Docker Compose defines how Docker should test if a container is healthy. Here is the basic structure:",
+   "published": ""
+  },
+  {
+   "title": "Docker Healthcheck Guide \u2014 Enterno.io",
+   "url": "https://enterno.io/en/articles/docker-healthcheck-guide",
+   "text": "Jun 18, 2026 \u00b7 A guide to Docker's HEALTHCHECK: syntax in Dockerfile and compose, interval and retries parameters, healthy/unhealthy statuses, and external monitoring on top.",
+   "published": ""
+  }
+ ]
+}

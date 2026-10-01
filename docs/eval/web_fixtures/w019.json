@@ -1,0 +1,51 @@
+{
+ "id": "w019",
+ "query": "celery task retry with backoff",
+ "recorded_at": "2026-10-01T06:19:28.065163+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Celery configuration for retry backoff - Stack Overflow",
+   "url": "https://stackoverflow.com/questions/58723621/celery-configuration-for-retry-backoff",
+   "text": "Nov 6, 2019 \u00b7 It looks like according to the Celery documentation the property you want to set is retry_backoff_max. Task.retry_backoff_max A number. If retry_backoff is enabled, this option will set a maximum delay in seconds between task autoretries. By default, this option is set to 600, which is 10 minutes. retry_backoff can be a number or a boolean and based on which it is the backoff will behave ...",
+   "published": ""
+  },
+  {
+   "title": "Retry Celery tasks with exponential back off - Stack Overflow",
+   "url": "https://stackoverflow.com/questions/9731435/retry-celery-tasks-with-exponential-back-off",
+   "text": "Mar 16, 2012 \u00b7 The task.request.retries attribute contains the number of tries so far, so you can use this to implement exponential back-off: ... To prevent a Thundering Herd Problem, you may consider adding a random jitter to your exponential backoff:",
+   "published": ""
+  },
+  {
+   "title": "Tasks \u2014 Celery 5.6.3 documentation",
+   "url": "https://docs.celeryq.dev/en/stable/userguide/tasks.html",
+   "text": "If retry_backoff is enabled, this option will set a maximum delay in seconds between task autoretries. By default, this option is set to 600, which is 10 minutes.",
+   "published": ""
+  },
+  {
+   "title": "Task Retry Mastery in Celery - numberanalytics.com",
+   "url": "https://www.numberanalytics.com/blog/task-retry-mastery-in-celery",
+   "text": "This API allows you to retry tasks manually, with custom retry policies and backoff strategies. For example, to implement a custom retry policy that retries a task with an exponential backoff strategy, you can use the following code:python from celery import Celery from celery.exceptions import Retry",
+   "published": ""
+  },
+  {
+   "title": "celery.app.autoretry \u2014 Celery 5.6.3 documentation",
+   "url": "https://docs.celeryq.dev/en/stable/_modules/celery/app/autoretry.html",
+   "text": "This document describes the current stable version of Celery (5.6). For development docs, go here.",
+   "published": ""
+  },
+  {
+   "title": "Celery Automatic Retry with Exponential Backoff in Python",
+   "url": "https://salivity.github.io/python/article/celery-automatic-retry-with-exponential-backoff-in-python",
+   "text": "Celery provides built-in mechanisms to handle transient failures gracefully by automatically retrying failed tasks using exponential backoff. This article explores how to implement retry policies in Celery using both declarative decorator parameters and manual programmatic controls, detailing options such as backoff limits, jitter, and maximum ...",
+   "published": ""
+  },
+  {
+   "title": "Celery Task Retry & Error Handling - task-queues.com",
+   "url": "https://www.task-queues.com/backend-frameworks-worker-scaling/celery-architecture-configuration/celery-task-retry-and-error-handling/",
+   "text": "Build resilient Celery tasks with autoretry_for, retry_backoff and jitter, max_retries, acks_late with reject_on_worker_lost, on_failure hooks, and dead-letter routing.",
+   "published": ""
+  }
+ ]
+}

@@ -1,0 +1,51 @@
+{
+ "id": "w012",
+ "query": "owasp top ten",
+ "recorded_at": "2026-10-01T06:19:09.775918+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "OWASP Top 10 - OWASP Foundation",
+   "url": "https://owasp.org/projects/top-ten",
+   "text": "The OWASP Top 10 is the reference standard for the most critical web application security risks. Adopting the OWASP Top 10 is perhaps the most effective first step towards changing your software\u2026",
+   "published": ""
+  },
+  {
+   "title": "OWASP Top 10:2025",
+   "url": "https://owasp.org/Top10/2025",
+   "text": "The OWASP Top 10 is a standard awareness document for developers and web application security. It represents a broad consensus about the most critical security risks to web applications.",
+   "published": ""
+  },
+  {
+   "title": "OWASP Top 10 - OWASP Developer Guide",
+   "url": "https://devguide.owasp.org/en/02-foundations/05-top-ten/",
+   "text": "OWASP Top 10 The OWASP Top Ten is a very well known list of web application security risks, and is included by the OWASP Software Assurance Maturity Model (SAMM) in the Education & Guidance practice within the Governance business function.",
+   "published": ""
+  },
+  {
+   "title": "OWASP Top 10 | OWASP Foundation",
+   "url": "https://www.owasp.community/projects/top-ten",
+   "text": "The OWASP Top 10 is the reference standard for the most critical web application security risks. Adopting the OWASP Top 10 is perhaps the most effective first step towards changing your software development culture focused on producing secure code.",
+   "published": ""
+  },
+  {
+   "title": "OWASP Top Ten Web Application Security Risks",
+   "url": "https://owasp.github.io/www-project-top-ten/",
+   "text": "The OWASP Top 10 is the reference standard for the most critical web application security risks. Adopting the OWASP Top 10 is perhaps the most effective first step towards changing your software development culture focused on producing secure code.",
+   "published": ""
+  },
+  {
+   "title": "OWASP Top 10: Vulnerabilities, Risks and How to Fix Them",
+   "url": "https://www.sentinelone.com/cybersecurity-101/cybersecurity/owasp-top-10/",
+   "text": "May 27, 2026 \u00b7 The OWASP Top 10 is a standard awareness document published by the OWASP Foundation that identifies the most critical security risks to web applications. Based on real-world vulnerability data and community surveys, the list provides a consensus-driven ranking that developers, security teams, and auditors use as a baseline for application security programs. The current edition was released in ...",
+   "published": ""
+  },
+  {
+   "title": "OWASP Top Ten Web Application Security Risks \u2013 OWASP Nest",
+   "url": "https://nest.owasp.org/projects/top-ten",
+   "text": "Sep 18, 2026 \u00b7 The OWASP Top 10 is a documentation project that outlines the most serious security risks for web applications. It serves as an important guide for developers to understand and address these vulnerabilities, promoting the creation of safer software. The project aims to help organizations adopt best practices in security to improve their development culture. The upcoming release of the OWASP ...",
+   "published": ""
+  }
+ ]
+}

@@ -1,0 +1,51 @@
+{
+ "id": "w026",
+ "query": "sentence-transformers all-MiniLM-L6-v2",
+ "recorded_at": "2026-10-01T06:19:46.468641+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Pretrained Models \u2014 Sentence Transformers documentation",
+   "url": "https://www.sbert.net/docs/sentence_transformer/pretrained_models.html",
+   "text": "The sentence-transformers/all-mpnet-base-v2 model provides the best quality, while sentence-transformers/all-MiniLM-L6-v2 is 5 times faster and still offers good quality. Toggle All models to see all evaluated original models.",
+   "published": ""
+  },
+  {
+   "title": "GitHub - henrytanner52/all-MiniLM-L6-v2",
+   "url": "https://github.com/henrytanner52/all-MiniLM-L6-v2",
+   "text": "all-MiniLM-L6-v2 This is a sentence-transformers model: It maps sentences & paragraphs to a 384 dimensional dense vector space and can be used for tasks like clustering or semantic search.",
+   "published": ""
+  },
+  {
+   "title": "Quickstart \u2014 Sentence Transformers documentation - SBERT.net",
+   "url": "https://www.sbert.net/docs/quickstart.html",
+   "text": "In this example, we load sentence-transformers/all-MiniLM-L6-v2, which is a MiniLM model finetuned on a large dataset of over 1 billion training pairs. Using SentenceTransformer.similarity (), we compute the similarity between all pairs of sentences.",
+   "published": ""
+  },
+  {
+   "title": "sentence-transformers--all-minilm-l6-v2",
+   "url": "https://ai.azure.com/catalog/models/sentence-transformers--all-minilm-l6-v2",
+   "text": "all-MiniLM-L6-v2 This is a sentence-transformers model: It maps sentences & paragraphs to a 384 dimensional dense vector space and can be used for tasks like clustering or semantic search.",
+   "published": ""
+  },
+  {
+   "title": "sentence-transformers-all-minilm-l6-v2",
+   "url": "https://ai.azure.com/catalog/models/sentence-transformers-all-minilm-l6-v2",
+   "text": "Must be a key in the sentence-transformers configuration prompts dictionary, which is either set in the constructor or loaded from the model configuration. For example if prompt_name is \"query\" and the prompts is {\"query\": \"query: \", ...}, then the sentence \"What is the capital of France?\"",
+   "published": ""
+  },
+  {
+   "title": "sentence-transformers/all-MiniLM-L6-v2 \u00b7 Hugging Face",
+   "url": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2",
+   "text": "We\u2019re on a journey to advance and democratize artificial intelligence through open source and open science.",
+   "published": ""
+  },
+  {
+   "title": "sentence-transformers/all-MiniLM-L6-v2 at main - Hugging Face",
+   "url": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/tree/main",
+   "text": "We\u2019re on a journey to advance and democratize artificial intelligence through open source and open science.",
+   "published": ""
+  }
+ ]
+}

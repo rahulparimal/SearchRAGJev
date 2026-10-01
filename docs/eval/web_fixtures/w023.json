@@ -1,0 +1,51 @@
+{
+ "id": "w023",
+ "query": "cosine similarity formula",
+ "recorded_at": "2026-10-01T06:19:38.627856+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Cosine similarity - Wikipedia",
+   "url": "https://en.wikipedia.org/wiki/Cosine_similarity",
+   "text": "Learn how to calculate cosine similarity, a measure of similarity between two non-zero vectors in an inner product space. See the formula, examples, applications, and related concepts such as cosine distance and angular distance.",
+   "published": ""
+  },
+  {
+   "title": "Cosine Similarity - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/dbms/cosine-similarity/",
+   "text": "Jul 15, 2025 \u00b7 Cosine similarity measures the similarity between two non-zero vectors by calculating the cosine of the angle between them. It is widely used in machine learning and data analysis, especially in text analysis, document comparison, search queries, and recommendation systems.",
+   "published": ""
+  },
+  {
+   "title": "What is cosine similarity? - IBM",
+   "url": "https://www.ibm.com/think/topics/cosine-similarity",
+   "text": "What is cosine similarity? Cosine similarity is a widely used similarity metric that determines how similar two data points are based on the direction they point rather than their length or size. It is especially effective in high-dimensional spaces where traditional distance-based metrics can struggle.",
+   "published": ""
+  },
+  {
+   "title": "Cosine Similarity Calculator",
+   "url": "https://www.omnicalculator.com/math/cosine-similarity",
+   "text": "The cosine similarity calculator calculates the cosine similarity, cosine distance, and angle between two vectors, with all its calculations shown in easy steps.",
+   "published": ""
+  },
+  {
+   "title": "Cosine Similarity - Online Tutorials Library",
+   "url": "https://www.tutorialspoint.com/article/cosine-similarity",
+   "text": "The cosine similarity measures the angle between two vectors. A large cosine similarity indicates that the vectors are similar, while a small cosine similarity indicates that the vectors are dissimilar. The following is the cosine similarity mathematical formula Cosine similarity is equal to (A.B) / (A x B).",
+   "published": ""
+  },
+  {
+   "title": "How Does Cosine Similarity Work? The Math Behind LLMs Explained",
+   "url": "https://www.freecodecamp.org/news/how-does-cosine-similarity-work/",
+   "text": "Sep 18, 2025 \u00b7 Without cosine similarity, embeddings would be less useful, and tasks like semantic search, clustering, and ranking would be harder. By reducing the problem to measuring angles, we make meaning measurable and usable. Every time you search on Google, chat with an AI, or use a recommendation engine, cosine similarity is at work behind the scenes.",
+   "published": ""
+  },
+  {
+   "title": "How to Calculate Cosine Similarity in Python? - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/python/how-to-calculate-cosine-similarity-in-python/",
+   "text": "Jun 12, 2025 \u00b7 Cosine Similarity is a metric used to measure how similar two vectors are, regardless of their magnitude. It is frequently used in text analysis, recommendation systems, and clustering tasks, where the orientation of data (rather than its scale) is more important.",
+   "published": ""
+  }
+ ]
+}

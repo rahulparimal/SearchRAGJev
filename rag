@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# One-command entry point. Docker is the only prerequisite (python3 is used for stdlib-only helpers).
+#   ./rag up [--check|--force]   create .env (secrets generated, never printed), pick free ports, build, start, wait healthy, seed samples
+#   ./rag down | status | logs [svc] | doctor | seed | eval [args] | reset | dev [start|stop|status|logs]
+set -euo pipefail
+cd "$(dirname "$0")"
+PY="${PYTHON:-python3}"
+need_docker() { command -v docker >/dev/null 2>&1 || { echo "Docker is not installed. Install Docker Desktop (macOS) or Docker Engine + compose plugin (Linux)."; exit 1; }
+  docker info >/dev/null 2>&1 || { echo "Docker is installed but not running. Start it and re-run."; exit 1; }
+  docker compose version >/dev/null 2>&1 || { echo "Docker Compose v2 is required ('docker compose')."; exit 1; }; }
+env_val() { local v=""; [[ -f .env ]] && v=$(sed -n "s/^$1=//p" .env | tail -1); echo "${v:-${2:-}}"; }   # reads ports/usernames only (never secrets)
+running() { [[ -n "$(docker compose ps -q api 2>/dev/null)" ]]; }   # the app stack (api container) is up
+infra_only() { [[ -n "$(docker compose ps -q postgres qdrant redis 2>/dev/null)" ]] && ! running; }  # dev mode: only the infra containers run
+urls() { echo "  UI   http://localhost:$(env_val WEB_PORT 5173)"; echo "  API  http://localhost:$(env_val API_PORT 8000)/docs"; echo "  login: user $(env_val ADMIN_USERNAME admin), password: see ADMIN_PASSWORD in .env"; }
+cmd="${1:-help}"; [[ $# -gt 0 ]] && shift
+case "$cmd" in
+up)
+  check=0; force=0; for a in "$@"; do [[ "$a" == "--check" ]] && check=1; [[ "$a" == "--force" ]] && force=1; done
+  if ((check)); then
+    echo "[check] nothing will be started or written"
+    if [[ ! -f .env ]]; then
+      echo "[check] .env does not exist yet: './rag up' will CREATE it (secrets generated with python's secrets module, never printed, mode 0600) and pick free ports."
+      echo "[check] docker-compose.yml is not validated here because it needs .env; the real 'up' validates it. Ports that would be used:"
+      "$PY" scripts/setup_env.py --mode docker --check | grep -E '^ports?' || true
+      exit 0
+    fi
+    keep=(); command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1 && running && keep=(--keep-ports)
+    "$PY" scripts/setup_env.py --mode docker --check ${keep[@]+"${keep[@]}"}
+    if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then docker compose config -q && echo "[check] docker-compose.yml is valid"; infra_only && echo "[check] NOTE: only infra containers are running (dev mode); a real 'up' would refuse without --force because it recreates them on new ports"; else echo "[check] docker not available: compose file not validated"; fi
+    exit 0
+  fi
+  need_docker
+  if infra_only && ((!force)); then echo "postgres/qdrant/redis are already running without the app containers (./rag dev mode)."; echo "'./rag up' would recreate them on different ports and break that stack. Stop it first (./rag dev stop) or pass --force."; exit 1; fi
+  keep=(); running && keep=(--keep-ports)     # a running stack owns its ports: a second `up` must not move them
+  "$PY" scripts/setup_env.py --mode docker ${keep[@]+"${keep[@]}"}
+  docker compose up -d --build --wait --wait-timeout 900
+  echo "Seeding sample documents (idempotent)..."
+  docker compose exec -T api python scripts/ingest_samples.py
+  echo; echo "Ready:"; urls; echo "  health: ./rag doctor";;
+down) need_docker; docker compose down;;
+status) need_docker; docker compose ps; curl -fsS -m4 "http://localhost:$(env_val API_PORT 8000)/health" && echo || echo "API not reachable";;
+logs) need_docker; docker compose logs -f --tail=100 "$@";;
+doctor) exec "$PY" scripts/doctor.py "$@";;
+seed) need_docker; docker compose exec -T api python scripts/ingest_samples.py "$@";;
+eval) set -a; . ./.env; set +a
+  exec "$PY" scripts/evaluate.py --api "http://localhost:${API_PORT:-8000}" "$@";;
+reset)
+  need_docker; read -r -p "This deletes ALL indexed documents, users and vectors (docker volumes). .env is kept. Type 'reset' to continue: " a
+  [[ "$a" == "reset" ]] && docker compose down -v || echo "Cancelled";;
+dev) exec scripts/run_local.sh "${1:-start}";;
+*) sed -n '2,5p' "$0" | sed 's/^# \{0,1\}//'; exit 1;;
+esac

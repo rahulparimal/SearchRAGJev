@@ -1,3 +1,4 @@
+# Host ports come from .env (./rag up picks free ones). Infra and API publish on 127.0.0.1 only; the web UI is the only public entry point.
 services:
   postgres:
     image: postgres:16-alpine
@@ -6,7 +7,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-ragsearch}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
     volumes: [pgdata:/var/lib/postgresql/data]
-    ports: ["127.0.0.1:5433:5432"]
+    ports: ["127.0.0.1:${PG_PORT:-5433}:5432"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ragsearch} -d ${POSTGRES_DB:-ragsearch}"]
       interval: 5s
@@ -15,39 +16,73 @@ services:
   qdrant:
     image: qdrant/qdrant:v1.12.4
     volumes: [qdrantdata:/qdrant/storage]
-    ports: ["127.0.0.1:6335:6333"]
+    ports: ["127.0.0.1:${QDRANT_PORT:-6335}:6333"]
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c ':> /dev/tcp/127.0.0.1/6333' || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
   redis:
     image: redis:7-alpine
-    ports: ["127.0.0.1:6380:6379"]
+    ports: ["127.0.0.1:${REDIS_PORT:-6380}:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
   api:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
     env_file: .env
     environment: &svc_env
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-ragsearch}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-ragsearch}
       QDRANT_URL: http://qdrant:6333
       REDIS_URL: redis://redis:6379/0
-    ports: ["8000:8000"]
-    volumes: [uploads:/app/uploads, modelcache:/root/.cache]
+    ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
+    volumes:
+      - uploads:/app/uploads
+      - ./scripts:/app/scripts:ro   # the image build context is ./backend, so scripts/ (ingest_samples.py) is mounted, not copied
+      - ./docs/samples:/app/docs/samples:ro
+    healthcheck:
+      # /health is 200 only when postgres, qdrant and redis answer; the embedder warms in the background (reported, not blocking).
+      test: ["CMD", "python", "-c", "import urllib.request,sys;sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health',timeout=3).status==200 else 1)"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
     depends_on:
       postgres: {condition: service_healthy}
-      qdrant: {condition: service_started}
-      redis: {condition: service_started}
+      qdrant: {condition: service_healthy}
+      redis: {condition: service_healthy}
   worker:
-    build: ./backend
+    build:
+      context: ./backend
+      args:
+        EMBEDDING_MODEL: ${EMBEDDING_MODEL:-sentence-transformers/all-MiniLM-L6-v2}
     command: ["celery", "-A", "tasks.celery", "worker", "--loglevel=INFO", "--concurrency=2"]
     env_file: .env
     environment: *svc_env
-    volumes: [uploads:/app/uploads, modelcache:/root/.cache]
+    volumes: [uploads:/app/uploads]
     depends_on:
       postgres: {condition: service_healthy}
-      qdrant: {condition: service_started}
-      redis: {condition: service_started}
+      qdrant: {condition: service_healthy}
+      redis: {condition: service_healthy}
   web:
     build: ./frontend
-    ports: ["5173:80"]
-    depends_on: [api]
+    ports: ["${WEB_PORT:-5173}:80"]
+    depends_on:
+      api: {condition: service_healthy}
+  # Optional self-hosted metasearch: COMPOSE_PROFILES=websearch ./rag up, then set WEB_PROVIDERS=searxng,ddgs and SEARXNG_URL=http://searxng:8080
+  searxng:
+    profiles: [websearch]
+    image: searxng/searxng:2026.9.30-a9d990033  # pinned tag (verified on Docker Hub 2026-10-01); bump deliberately, never :latest
+    environment:
+      SEARXNG_SECRET: ${SEARXNG_SECRET:-}
+    volumes: ["./docker/searxng/settings.yml:/etc/searxng/settings.yml:ro"]
+    expose: ["8080"]
 volumes:
   pgdata: {}
   qdrantdata: {}
   uploads: {}
-  modelcache: {}

@@ -1,0 +1,51 @@
+{
+ "id": "w015",
+ "query": "iso 8601 date and time format",
+ "recorded_at": "2026-10-01T06:19:17.647476+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "ISO 8601 - Wikipedia",
+   "url": "https://en.wikipedia.org/wiki/ISO_8601",
+   "text": "ISO 8601 is an international standard covering the worldwide exchange and communication of date and time -related data. It is maintained by the International Organization for Standardization (ISO) and was first published in 1988, with updates in 1991, 2000, 2004, and 2019, and an amendment in 2022. [1]",
+   "published": ""
+  },
+  {
+   "title": "ISO - ISO 8601 \u2014 Date and time format",
+   "url": "https://www.iso.org/iso-8601-date-and-time-format.html",
+   "text": "ISO 8601 tackles this uncertainty by setting out an internationally agreed way to represent dates: YYYY-MM-DD Therefore, the order of the elements used to express date and time in ISO 8601 is as follows: year, month, day, hour, minutes, seconds, and milliseconds. For example, September 27, 2022 at 6 p.m. is represented as 2022-09-27 18:00:00.000.",
+   "published": ""
+  },
+  {
+   "title": "ISO 8601 Date Converter \u2014 All Formats | TimeMath",
+   "url": "https://timemath.net/iso-8601-converter/",
+   "text": "1 day ago \u00b7 Convert any date to ISO 8601 formats: date-only, datetime, UTC, timezone offset, week notation, and ordinal. Parse ISO strings to readable dates.",
+   "published": ""
+  },
+  {
+   "title": "ISO 8601 \u2014 International Standard for Date and Time",
+   "url": "https://www.iso8601.com/",
+   "text": "Complete technical reference for ISO 8601:2019 date and time representation standard. Formats, examples, and implementation guidelines.",
+   "published": ""
+  },
+  {
+   "title": "ISO 8601 Converter - time.now",
+   "url": "https://time.now/tool/iso-8601-converter/",
+   "text": "Jun 10, 2025 \u00b7 Convert ISO 8601 timestamps to readable dates instantly. Handle full ISO, date-only, time-only, and week formats with timezone conversion and Unix output.",
+   "published": ""
+  },
+  {
+   "title": "ISO 8601-1:2019 - Date and time \u2014 Representations for ...",
+   "url": "https://www.iso.org/standard/70907.html",
+   "text": "Abstract This document specifies representations of dates of the Gregorian calendar and times based on the 24-hour clock, as well as composite elements of them, as character strings for use in information interchange. It is also applicable for representing times and time shifts based on Coordinated Universal Time (UTC).",
+   "published": ""
+  },
+  {
+   "title": "ISO 8601 Date Format Explained - dateandtimeconverter.com",
+   "url": "https://dateandtimeconverter.com/guides/iso-8601/",
+   "text": "A practical breakdown of the ISO 8601 date and time standard \u2014 what it is, why it matters, the different format variants, and how to use them correctly in APIs, databases, and everyday work.",
+   "published": ""
+  }
+ ]
+}

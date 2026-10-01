@@ -1,0 +1,51 @@
+{
+ "id": "w020",
+ "query": "install pytorch cpu only",
+ "recorded_at": "2026-10-01T06:19:30.739989+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Installing a CPU-Only Version of PyTorch - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/deep-learning/installing-a-cpu-only-version-of-pytorch/",
+   "text": "Jul 23, 2025 \u00b7 While PyTorch is well-known for its GPU support, there are many scenarios where a CPU-only version is preferable, especially for users with limited hardware resources or those deploying applications on platforms without GPU support. This article will guide you through the process of installing a CPU-only version of PyTorch in Google Colab.",
+   "published": ""
+  },
+  {
+   "title": "heroku - Where do I get a CPU-only version of PyTorch ...Usage example",
+   "url": "https://stackoverflow.com/questions/51730880/where-do-i-get-a-cpu-only-version-of-pytorch",
+   "text": "Aug 7, 2018 \u00b7 I'm trying to get a basic app running with Flask + PyTorch, and host it on Heroku. However, I run into the issue that the maximum slug size is 500mb on the free version, and PyTorch itself is ~500mb. See more on stackoverflow",
+   "published": ""
+  },
+  {
+   "title": "Get Started - PyTorchInstalling a CPU-Only Version of PyTorch \u2013 TheLinuxCodeStart Locally | PyTorchPyTorch CPU on PyPI: A Comprehensive Guide - codegenes.netpython - How to install CPU only version of pytorch using ...",
+   "url": "https://pytorch.org/get-started/locally/",
+   "text": "Supported Windows Distributions PyTorch is supported on the following Windows distributions: 1. Windows 7 and greater; Windows 10or greater recommended. 2. Windows Server 2008r2 and greater Python Currently, PyTorch on Windows only supports Python 3.9-3.12; Python 2.x is not supported. As it is not installed by default on Windows, there are multiple ways to install Python: 1. Chocolatey 2. Python website 3. Anaconda For a Chocolatey-based install, run the following command in an administrative command prompt: Package Manager To install the PyTorch binaries, you will need to use at least one of two supported package managers: Anaconda and pip. Anaconda is the recommended package manager as it will provide you all of the PyTorch dependencies in one, sandboxed install, including Python and pip. See full list on pytorch.org Anaconda To install PyTorch with Anaconda, you will need to open an Anaconda prompt via Start | Anaconda3 | Anaconda Prompt. See full list on pytorch.org To ensure that PyTorch was installed correctly, we can verify the installation by running sample PyTorch code. Here we will construct a randomly initialized tensor. From the command line, type: then enter the following code: The output should be something similar to: Additionally, to check if your GPU driver and CUDA is enabled and accessible by Py... See full list on pytorch.org For the majority of PyTorch users, installing from a pre-built binary via a package manager will provide the best experience. However, there are times when you may want to install the bleeding edge PyTorch code, whether for testing or actual development on the PyTorch core. To install the latest PyTorch code, you will need to build PyTorch from sou... See full list on pytorch.org Feb 23, 2026 \u00b7 The CPU-only wheels are hosted on the PyTorch CPU index. When I use pip, I explicitly point at that index to avoid pulling in CUDA wheels from a cached index or a previously configured source. That single choice prevents most of the confusing situations where a CPU machine tries to import GPU libraries it cannot load. Get Started Select preferences and run the command to install PyTorch locally, or get started quickly with one of the supported cloud platforms. Jan 16, 2026 \u00b7 Conclusion PyTorch CPU on PyPI provides a convenient and efficient way to develop and train deep learning models on CPU-only systems. By understanding the fundamental concepts, installation process, usage methods, common practices, and best practices, you can effectively use PyTorch CPU for your machine learning projects. Mar 19, 2025 \u00b7 How can I install a CPU only version of pytorch here? torch-cpu doesn't exist. I found a poetry based solution enter link description here here but couldn't make it work with setuptools. I added the following to my pyproject but it still ended up downloading cuda based libraries.",
+   "published": ""
+  },
+  {
+   "title": "Installing a CPU-Only Version of PyTorch \u2013 TheLinuxCode",
+   "url": "https://thelinuxcode.com/installing-a-cpu-only-version-of-pytorch/",
+   "text": "Feb 23, 2026 \u00b7 The CPU-only wheels are hosted on the PyTorch CPU index. When I use pip, I explicitly point at that index to avoid pulling in CUDA wheels from a cached index or a previously configured source. That single choice prevents most of the confusing situations where a CPU machine tries to import GPU libraries it cannot load.",
+   "published": ""
+  },
+  {
+   "title": "Start Locally | PyTorch",
+   "url": "https://docs.pytorch.org/get-started/locally/",
+   "text": "Get Started Select preferences and run the command to install PyTorch locally, or get started quickly with one of the supported cloud platforms.",
+   "published": ""
+  },
+  {
+   "title": "PyTorch CPU on PyPI: A Comprehensive Guide - codegenes.net",
+   "url": "https://www.codegenes.net/blog/pytorchcpu-pypi/",
+   "text": "Jan 16, 2026 \u00b7 Conclusion PyTorch CPU on PyPI provides a convenient and efficient way to develop and train deep learning models on CPU-only systems. By understanding the fundamental concepts, installation process, usage methods, common practices, and best practices, you can effectively use PyTorch CPU for your machine learning projects.",
+   "published": ""
+  },
+  {
+   "title": "python - How to install CPU only version of pytorch using ...",
+   "url": "https://stackoverflow.com/questions/79521003/how-to-install-cpu-only-version-of-pytorch-using-setuptools-backed-pyproject-tom",
+   "text": "Mar 19, 2025 \u00b7 How can I install a CPU only version of pytorch here? torch-cpu doesn't exist. I found a poetry based solution enter link description here here but couldn't make it work with setuptools. I added the following to my pyproject but it still ended up downloading cuda based libraries.",
+   "published": ""
+  }
+ ]
+}

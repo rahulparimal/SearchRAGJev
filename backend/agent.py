@@ -3,13 +3,17 @@ ROUTE_QUESTION={'route':{'type':'choice','instructions':'Decide where to look. "
 
 LOCAL_OVERRIDE=0.6  # best local chunk must contain >=60% of the query's content terms
 
-def route_query(query,decide,local_coverage,web_enabled=True):
-    """Returns (route, reason). `decide` is the Jev decision callable; `local_coverage` is the share (0..1) of the query's content
-    terms found in the best-matching permitted local chunk."""
+def resolve_route(choice,local_coverage,web_enabled=True):
+    """Returns (route, reason) from a Jev route choice (local/web/both/None) plus the BM25 coverage override. `local_coverage` is the
+    share (0..1) of the query's content terms found in the best-matching permitted local chunk."""
     if not web_enabled:return 'local','web_disabled'
-    choice=decide(query,ROUTE_QUESTION).get('route',{}).get('choice')
-    if choice in {'local','web'}:
+    if choice in {'local','web','both'}:
         # A Jev "web" vote is overridden when the local corpus clearly contains the query terms.
         if choice=='web' and local_coverage>=LOCAL_OVERRIDE:return 'local','jev_web_overridden_by_strong_local_match'
         return choice,'jev'
     return ('local','bm25_local_match') if local_coverage>=LOCAL_OVERRIDE else ('web','bm25_no_local_match')
+
+def route_query(query,decide,local_coverage,web_enabled=True):
+    """Synchronous variant: asks `decide` (Jev decision callable) itself. Kept for callers without a prefetched plan."""
+    if not web_enabled:return 'local','web_disabled'
+    return resolve_route(decide(query,ROUTE_QUESTION).get('route',{}).get('choice'),local_coverage,True)

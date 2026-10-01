@@ -1,0 +1,51 @@
+{
+ "id": "w025",
+ "query": "qdrant payload filtering",
+ "recorded_at": "2026-10-01T06:19:43.930632+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Filtering - Qdrant",
+   "url": "https://qdrant.tech/documentation/search/filtering/",
+   "text": "Filter Qdrant search results with payload conditions on metadata and IDs, combining database-style clauses with vector similarity for precise retrieval.",
+   "published": ""
+  },
+  {
+   "title": "Payload - Qdrant",
+   "url": "https://qdrant.tech/documentation/manage-data/payload/",
+   "text": "Payload types In addition to storing payloads, Qdrant also allows you search based on certain kinds of values. This feature is implemented as additional filters during the search and will enable you to incorporate custom logic on top of semantic similarity. During the filtering, Qdrant will check the conditions over those values that match the type of the filtering condition. If the stored ...",
+   "published": ""
+  },
+  {
+   "title": "Payload Indexing and Filtering | qdrant/qdrant | DeepWiki",
+   "url": "https://deepwiki.com/qdrant/qdrant/4-payload-indexing-and-filtering",
+   "text": "Aug 19, 2026 \u00b7 This document provides an overview of how Qdrant stores, indexes, and filters payload data attached to vector points. Payload is arbitrary JSON metadata associated with each point, and efficient filte",
+   "published": ""
+  },
+  {
+   "title": "Qdrant Filter and Payload Index Guide | ComputingForGeeks",
+   "url": "https://computingforgeeks.com/qdrant-filter-payload-index/",
+   "text": "A payload index gives Qdrant a third path: filterable HNSW. The index tells the planner which points satisfy the filter, and the graph traversal stays inside that pre-filtered subset.",
+   "published": ""
+  },
+  {
+   "title": "Filtering and Scoring | qdrant/qdrant | DeepWiki",
+   "url": "https://deepwiki.com/qdrant/qdrant/5.2-filtering-and-scoring",
+   "text": "May 17, 2026 \u00b7 This page describes how Qdrant evaluates filters and computes scores during search operations. It covers the implementation of filter checking, distance metrics, query context preparation, and the scoring algorithms used in both plain scans and HNSW graph traversal. Overview Filtering and scoring occur at the segment level.",
+   "published": ""
+  },
+  {
+   "title": "Qdrant: HNSW Indexing, Payload Filtering, Quantization, and ...",
+   "url": "https://www.datastudios.org/post/qdrant-hnsw-indexing-payload-filtering-quantization-and-vector-search-performance",
+   "text": "Qdrant is an open-source vector database written in Rust, built around a single-stage architecture where approximate nearest neighbor search and payload filtering are executed inside the same index traversal rather than as separate pre- or post-filtering passes. It ships as a self-hosted binary (Apache 2.0), a Docker image, and a managed offering (Qdrant Cloud) with free, standard, premium ...",
+   "published": ""
+  },
+  {
+   "title": "How to Delete Qdrant Points by Payload Filter and Wait for ...",
+   "url": "https://oneuptime.com/blog/post/2026-08-28-qdrant-delete-points-payload-filter-wait/view",
+   "text": "Aug 28, 2026 \u00b7 Learn how to preview and delete Qdrant points by payload filter, wait for completion, verify the result, and prepare recovery.",
+   "published": ""
+  }
+ ]
+}

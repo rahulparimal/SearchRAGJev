@@ -5,7 +5,7 @@ from sqlalchemy import create_engine,String,Text,DateTime,ForeignKey,Integer,tex
 from sqlalchemy.orm import DeclarativeBase,Mapped,mapped_column,sessionmaker
 
 DATABASE_URL=os.getenv('DATABASE_URL','postgresql+psycopg://ragsearch:change-me@localhost:5432/ragsearch')
-engine=create_engine(DATABASE_URL,pool_pre_ping=True,pool_size=10,max_overflow=10)
+engine=create_engine(DATABASE_URL,pool_pre_ping=True,pool_size=int(os.getenv('DB_POOL_SIZE','20')),max_overflow=int(os.getenv('DB_MAX_OVERFLOW','20')))  # sized for the 24-thread search pool + 16-thread io pool, each opening its own Session
 Db=sessionmaker(engine,expire_on_commit=False)
 class Base(DeclarativeBase):pass
 class User(Base):

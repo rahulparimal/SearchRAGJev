@@ -1,0 +1,57 @@
+{
+ "id": "w029",
+ "query": "reciprocal rank fusion hybrid search",
+ "recorded_at": "2026-10-01T06:19:54.376276+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Native Reciprocal Rank Fusion - Hybrid Search in MongoDB Atlas",
+   "url": "https://www.bing.com/aclick?ld=e8YE9ZvA9mG8n1qQO8ncHCtzVUCUz6qRecjvf-GCJVH5rIz6jP0CsORtw73EiHnYF5mIJzalzgHXSpCVlK_yEZMYa6R2x0y8NDG8Hl1QmXAsWwc7kNv0QK0Akx1HLzjAh_7tOjFRkjY_Ik997KyPZeGvkODSBaA81YWwctNiEEG39g7GE05zJmanSVmJZkaFgIqX6lniNpxqUUinz2hABANwAuZhM&u=aHR0cHMlM2ElMmYlMmZ3d3cubW9uZ29kYi5jb20lMmZkb2NzJTJmdmVjdG9yLXNlYXJjaCUyZmh5YnJpZC1zZWFyY2glMmZoeWJyaWQtc2VhcmNoLW92ZXJ2aWV3JTJmJTNmdXRtX3NvdXJjZSUzZGJpbmclMjZ1dG1fY2FtcGFpZ24lM2RzZWFyY2hfYnNfcGxfZXZlcmdyZWVuX3ZlY3Rvci1zZWFyY2hfcHJvZHVjdF9wcm9zcC1uYm5vbl9naWMtbnVsbF93dy1tdWx0aV9wcy1hbGxfZGVza3RvcF9lbmdfbGVhZCUyNnV0bV90ZXJtJTNkaHlicmlkJTI1MjBzZWFyY2glMjZ1dG1fbWVkaXVtJTNkY3BjX3BhaWRfc2VhcmNoJTI2dXRtX2FkJTNkcCUyNnV0bV9hZF9jYW1wYWlnbl9pZCUzZDY2MzU0NjAzNCUyNmFkZ3JvdXAlM2QxMzI4MjEyNzI2Njk1NzkwJTI2Y3FfY21wJTNkNjYzNTQ2MDM0JTI2bXNjbGtpZCUzZDRlOWUzZTA5OWIxMTFhZDZlMTJhNTRiNDYwOWJlMTBm&rlid=4e9e3e099b111ad6e12a54b4609be10f",
+   "text": "Combine the power of text and vector search in MongoDB Atlas. Deliver fast and accurate search on top of your data in MongoDB Atlas. Search unstructured data \u00b7 Build generative AI apps \u00b7 Simplified architecture \u00b7 Quick setup",
+   "published": ""
+  },
+  {
+   "title": "Hybrid Search Scoring (RRF) - Azure AI Search | Microsoft Learn",
+   "url": "https://learn.microsoft.com/en-us/azure/search/hybrid-search-ranking",
+   "text": "Jun 8, 2026 \u00b7 Reciprocal Rank Fusion (RRF) is an algorithm that evaluates search scores from multiple previously ranked results to produce a single, unified result set. In Azure AI Search, RRF is used when two or more queries execute in parallel, such as hybrid queries and multiple vector queries.",
+   "published": ""
+  },
+  {
+   "title": "Introducing reciprocal rank fusion for hybrid search",
+   "url": "https://opensearch.org/blog/introducing-reciprocal-rank-fusion-hybrid-search/",
+   "text": "Feb 12, 2025 \u00b7 Learn how OpenSearch 2.19's new Reciprocal Rank Fusion (RRF) enhances hybrid search by intelligently merging results from diverse query sources, improving relevance, stability, and performance for high-throughput applications.",
+   "published": ""
+  },
+  {
+   "title": "Hybrid Search - Combining BM25 and Vector Retrieval - Azure ...",
+   "url": "https://learn.microsoft.com/en-us/azure/documentdb/full-text-search-hybrid",
+   "text": "Jun 2, 2026 \u00b7 Reciprocal Rank Fusion (RRF) is the recommended fusion algorithm because it ignores raw scores (which aren't comparable across different scoring systems) and combines ranks instead.",
+   "published": ""
+  },
+  {
+   "title": "Reciprocal Rank Fusion (RRF) for Hybrid Search - apxml.com",
+   "url": "https://apxml.com/courses/advanced-vector-search-llms/chapter-3-hybrid-search-approaches/rrf-fusion-algorithms",
+   "text": "Implementing Reciprocal Rank Fusion and exploring alternative algorithms for combining search results.",
+   "published": ""
+  },
+  {
+   "title": "Reciprocal Rank Fusion: How Hybrid Search Really Works",
+   "url": "https://redis.io/blog/reciprocal-rank-fusion/",
+   "text": "Learn how reciprocal rank fusion merges ranked lists without comparing raw scores, why retrieval speed matters more than fusion math, and where RRF shows up in production.",
+   "published": ""
+  },
+  {
+   "title": "Building Hybrid Search for RAG: Combining pgvector and Full ...",
+   "url": "https://dev.to/lpossamai/building-hybrid-search-for-rag-combining-pgvector-and-full-text-search-with-reciprocal-rank-fusion-6nk",
+   "text": "Feb 12, 2026 \u00b7 This post covers how we fixed it \u2014 using nothing but PostgreSQL. pgvector for semantic search, tsvector for full-text search, and Reciprocal Rank Fusion to merge the results.",
+   "published": ""
+  },
+  {
+   "title": "Hybrid Search: BM25, Vector & Reranking Reference 2026",
+   "url": "https://www.digitalapplied.com/blog/hybrid-search-bm25-vector-reranking-reference-2026",
+   "text": "May 26, 2026 \u00b7 A technical reference for hybrid retrieval: BM25 keyword scoring, dense vector search, reciprocal rank fusion, and cross-encoder reranking for better RAG.",
+   "published": ""
+  }
+ ]
+}

@@ -1,0 +1,51 @@
+{
+ "id": "w011",
+ "query": "git rebase vs merge difference",
+ "recorded_at": "2026-10-01T06:19:07.246728+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Merging vs. Rebasing | Atlassian Git Tutorial",
+   "url": "https://www.atlassian.com/git/tutorials/merging-vs-rebasing",
+   "text": "The git rebase command has a reputation for being magical Git hocus pocus that beginners should stay away from, but it can actually make life much easier for a development team when used with care. In this article, we\u2019ll compare git rebase with the related git merge command and identify all of the potential opportunities to incorporate rebasing into the typical Git workflow.",
+   "published": ""
+  },
+  {
+   "title": "Git - Difference Between Merging and Rebasing - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/git/git-difference-between-merging-and-rebasing/",
+   "text": "Jun 26, 2026 \u00b7 Both techniques serve the purpose of combining code from multiple branches, but they do so in different ways. This article will help you understand the differences between merging and rebasing, and guide you on when to use each strategy. Git merge Merging is a way to combine the changes from one branch into another.",
+   "published": ""
+  },
+  {
+   "title": "What's the difference between 'git merge' and 'git rebase'?Usage example",
+   "url": "https://stackoverflow.com/questions/16666089/whats-the-difference-between-Git-merge-and-git-rebase",
+   "text": "Whenever you rebasea branch, new commits will always be generated even though the content might still be the same! That said, any former commits will eventually (post garbage collection) be deleted from history if no other pointer (branch/tag) is referencing them. See full list on stackoverflow.com We\u2019ve seen how rebase rewrites history, while merge preserves it. But what does this mean in a broader sense? And what possibilities and potential drawbacks do the two operations come with? Conflicting changes Let\u2019s say, for example, you\u2019ve had some nasty conflicts trying to integrate the changes. In the merge scenario, you would have only needed t... See full list on stackoverflow.com While merge is safe to use from a potential data loss perspective, and can feel more straight forward to use. Here are some pointers that can help you avoid the most common issues related to rebase. 1. Don't rebase a branch that\u2019s been published remotely\u2026 2. \u2026unless you know you are the only one working on it (and feel safe force pushing) 3. Prior ... See full list on stackoverflow.com See more on stackoverflow",
+   "published": ""
+  },
+  {
+   "title": "Difference Between git merge and rebase - Baeldung on Ops",
+   "url": "https://www.baeldung.com/ops/git-merge-vs-rebase",
+   "text": "Feb 6, 2024 \u00b7 Explore the basic difference between git merge and git rebase which every developer should know while working with git VCS.",
+   "published": ""
+  },
+  {
+   "title": "When do you use Git rebase instead of Git merge?",
+   "url": "https://stackoverflow.com/questions/804115/when-do-you-use-git-rebase-instead-of-git-merge",
+   "text": "Apr 30, 2009 \u00b7 When is it recommended to use Git rebase vs. Git merge? Do I still need to merge after a successful rebase?",
+   "published": ""
+  },
+  {
+   "title": "Git rebase vs. merge: Differences + when to use | Zapier",
+   "url": "https://zapier.com/blog/git-rebase-vs-merge/",
+   "text": "May 28, 2025 \u00b7 Learn the key differences between git rebase vs. merge, when to use each, and how to keep your project history clean and collaboration smooth.",
+   "published": ""
+  },
+  {
+   "title": "Merging vs Rebasing \u2013 Git Cheat Sheet + Reference",
+   "url": "https://gitcheatsheet.dev/docs/concepts/merge-vs-rebase/",
+   "text": "Fundamental Distinction: Integration Philosophies Git provides two primary mechanisms for integrating changes from one branch into another: merge and rebase. While both achieve the functional goal of incorporating commits, they represent fundamentally different philosophies about history representation and employ distinct technical approaches. Understanding when to apply each strategy is ...",
+   "published": ""
+  }
+ ]
+}

@@ -1,0 +1,51 @@
+{
+ "id": "w005",
+ "query": "rfc 9110 http semantics",
+ "recorded_at": "2026-10-01T06:18:51.525589+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "RFC 9110: HTTP Semantics - RFC Editor",
+   "url": "https://www.rfc-editor.org/rfc/rfc9110.html",
+   "text": "RFC 9110 HTTP Semantics Abstract The Hypertext Transfer Protocol (HTTP) is a stateless application-level protocol for distributed, collaborative, hypertext information systems. This document describes the overall architecture of HTTP, establishes common terminology, and defines aspects of the protocol that are shared by all versions. In this definition are core protocol elements, extensibility ...",
+   "published": ""
+  },
+  {
+   "title": "RFC 9110: HTTP Semantics",
+   "url": "https://www.rfc-editor.org/rfc/rfc9110.pdf",
+   "text": "One design goal of HTTP is to separate resource identification from request semantics, which is made possible by vesting the request semantics in the request method (Section 9) and a few request-modifying header fields.",
+   "published": ""
+  },
+  {
+   "title": "RFC 9110 - HTTP Semantics - RFCinfo",
+   "url": "https://rfcinfo.com/rfc-9110/",
+   "text": "Jul 13, 2026 \u00b7 RFC 9110 defines semantics shared across all HTTP versions, regardless of whether HTTP/1.1, HTTP/2, or HTTP/3 is used. This makes the HTTP protocol more unified and easier to understand.",
+   "published": ""
+  },
+  {
+   "title": "RFC 9110 \u2014 HTTP Semantics",
+   "url": "https://rfc.blacklabs.team/rfc9110.html",
+   "text": "Abstract: HTTP Semantics (RFC 9110) defines the version-independent semantics of HTTP \u2014 methods, status codes, headers, content negotiation, and authentication. This is the definitive reference for HTTP behavior used in 5G SBI API design.",
+   "published": ""
+  },
+  {
+   "title": "RFC 9110: HTTP Semantics | Guide books - ACM Digital Library",
+   "url": "https://dl.acm.org/doi/10.17487/RFC9110",
+   "text": "Jun 1, 2022 \u00b7 The Hypertext Transfer Protocol (HTTP) is a stateless application-level protocol for distributed, collaborative, hypertext information systems. This document describes the overall architecture of HTTP, establishes common terminology, and defines aspects of the protocol that are shared by all versions. In this definition are core protocol elements, extensibility mechanisms, and the \"http\" and ...",
+   "published": ""
+  },
+  {
+   "title": "HTTP resources and specifications - HTTP | MDN - MDN Web Docs",
+   "url": "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Resources_and_specifications",
+   "text": "Sep 11, 2026 \u00b7 HTTP was first specified in the early 1990s. Designed with extensibility in mind, it has seen numerous additions over the years; this led to its specification being scattered through numerous specification documents (in the midst of experimental abandoned extensions). This page lists relevant resources about HTTP.",
+   "published": ""
+  },
+  {
+   "title": "RFC 9110 \u2014 HTTP Semantics \u00b7 ToastRFC",
+   "url": "https://rfc.breadtoasting.com/rfc/9110",
+   "text": "RFC 9110 HTTP Semantics STD 97 \u00b7 INTERNET STANDARD \u00b7 June 2022 \u00b7 R. Fielding, Ed., M. Nottingham, Ed., J. Reschke, Ed. The Hypertext Transfer Protocol (HTTP) is a stateless application-level protocol for distributed, collaborative, hypertext information systems. This document describes the overall architecture of HTTP, establishes common terminology, and defines aspects of the protocol that ...",
+   "published": ""
+  }
+ ]
+}

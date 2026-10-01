@@ -1,0 +1,30 @@
+{"id": "w001", "mode": "web", "type": "web", "query": "python asyncio gather documentation", "relevant_domains": ["docs.python.org"], "must_terms": ["asyncio"], "overview_expected": false}
+{"id": "w002", "mode": "web", "type": "web", "query": "what is the capital of australia", "relevant_domains": ["wikipedia.org", "britannica.com"], "must_terms": ["canberra"], "overview_expected": true}
+{"id": "w003", "mode": "web", "type": "web", "query": "kubernetes pod lifecycle phases", "relevant_domains": ["kubernetes.io"], "must_terms": ["pod"], "overview_expected": false}
+{"id": "w004", "mode": "web", "type": "web", "query": "postgres create index concurrently", "relevant_domains": ["postgresql.org"], "must_terms": ["concurrently"], "overview_expected": false}
+{"id": "w005", "mode": "web", "type": "web", "query": "rfc 9110 http semantics", "relevant_domains": ["rfc-editor.org", "ietf.org"], "must_terms": ["http"], "overview_expected": false}
+{"id": "w006", "mode": "web", "type": "web", "query": "how do vaccines work", "relevant_domains": ["who.int", "cdc.gov", "nih.gov", "wikipedia.org"], "must_terms": ["vaccine"], "overview_expected": true}
+{"id": "w007", "mode": "web", "type": "web", "query": "docker compose healthcheck syntax", "relevant_domains": ["docs.docker.com"], "must_terms": ["healthcheck"], "overview_expected": false}
+{"id": "w008", "mode": "web", "type": "web", "query": "react useeffect cleanup function", "relevant_domains": ["react.dev"], "must_terms": ["useeffect"], "overview_expected": false}
+{"id": "w009", "mode": "web", "type": "web", "query": "typescript generics constraints", "relevant_domains": ["typescriptlang.org"], "must_terms": ["generic"], "overview_expected": false}
+{"id": "w010", "mode": "web", "type": "web", "query": "gdpr right to erasure article 17", "relevant_domains": ["gdpr-info.eu", "europa.eu"], "must_terms": ["erasure"], "overview_expected": false}
+{"id": "w011", "mode": "web", "type": "web", "query": "git rebase vs merge difference", "relevant_domains": ["git-scm.com", "atlassian.com"], "must_terms": ["rebase"], "overview_expected": false}
+{"id": "w012", "mode": "web", "type": "web", "query": "owasp top ten", "relevant_domains": ["owasp.org"], "must_terms": ["owasp"], "overview_expected": false}
+{"id": "w013", "mode": "web", "type": "web", "query": "bm25 ranking function explained", "relevant_domains": ["wikipedia.org", "elastic.co"], "must_terms": ["bm25"], "overview_expected": false}
+{"id": "w014", "mode": "web", "type": "web", "query": "tcp three way handshake", "relevant_domains": ["wikipedia.org", "cloudflare.com", "geeksforgeeks.org"], "must_terms": ["handshake"], "overview_expected": false}
+{"id": "w015", "mode": "web", "type": "web", "query": "iso 8601 date and time format", "relevant_domains": ["iso.org", "wikipedia.org", "w3.org"], "must_terms": ["8601"], "overview_expected": false}
+{"id": "w016", "mode": "web", "type": "web", "query": "nginx proxy_buffering directive", "relevant_domains": ["nginx.org", "nginx.com"], "must_terms": ["proxy_buffering"], "overview_expected": false}
+{"id": "w017", "mode": "web", "type": "web", "query": "redis expire command ttl", "relevant_domains": ["redis.io"], "must_terms": ["expire"], "overview_expected": false}
+{"id": "w018", "mode": "web", "type": "web", "query": "fastapi dependency injection", "relevant_domains": ["fastapi.tiangolo.com"], "must_terms": ["dependenc"], "overview_expected": false}
+{"id": "w019", "mode": "web", "type": "web", "query": "celery task retry with backoff", "relevant_domains": ["docs.celeryq.dev"], "must_terms": ["retry"], "overview_expected": false}
+{"id": "w020", "mode": "web", "type": "web", "query": "install pytorch cpu only", "relevant_domains": ["pytorch.org"], "must_terms": ["pytorch"], "overview_expected": false}
+{"id": "w021", "mode": "web", "type": "web", "query": "latest stable python release", "relevant_domains": ["python.org"], "must_terms": ["python"], "overview_expected": false}
+{"id": "w022", "mode": "web", "type": "web", "query": "how to prevent sql injection", "relevant_domains": ["owasp.org", "cheatsheetseries.owasp.org"], "must_terms": ["injection"], "overview_expected": true}
+{"id": "w023", "mode": "web", "type": "web", "query": "cosine similarity formula", "relevant_domains": ["wikipedia.org"], "must_terms": ["cosine"], "overview_expected": false}
+{"id": "w024", "mode": "web", "type": "web", "query": "http 429 too many requests", "relevant_domains": ["developer.mozilla.org", "mozilla.org"], "must_terms": ["429"], "overview_expected": false}
+{"id": "w025", "mode": "web", "type": "web", "query": "qdrant payload filtering", "relevant_domains": ["qdrant.tech"], "must_terms": ["filter"], "overview_expected": false}
+{"id": "w026", "mode": "web", "type": "web", "query": "sentence-transformers all-MiniLM-L6-v2", "relevant_domains": ["huggingface.co", "sbert.net"], "must_terms": ["minilm"], "overview_expected": false}
+{"id": "w027", "mode": "web", "type": "web", "query": "what causes ocean tides", "relevant_domains": ["noaa.gov", "wikipedia.org", "nasa.gov"], "must_terms": ["tide"], "overview_expected": true}
+{"id": "w028", "mode": "web", "type": "web", "query": "how to rotate ssh keys safely", "relevant_domains": ["ssh.com", "digitalocean.com", "github.com"], "must_terms": ["ssh"], "overview_expected": true}
+{"id": "w029", "mode": "web", "type": "web", "query": "reciprocal rank fusion hybrid search", "relevant_domains": ["elastic.co", "learn.microsoft.com", "qdrant.tech"], "must_terms": ["rank"], "overview_expected": false}
+{"id": "w030", "mode": "web", "type": "web", "query": "difference between process and thread", "relevant_domains": ["wikipedia.org", "geeksforgeeks.org"], "must_terms": ["thread"], "overview_expected": false}

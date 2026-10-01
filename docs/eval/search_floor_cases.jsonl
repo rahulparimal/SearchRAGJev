@@ -1,0 +1,7 @@
+{"id": "f001", "mode": "local", "type": "semantic_no_overlap", "query": "can I plug in a thumb drive", "relevant": {"it_usb_policy.md": 3}, "forbidden": [], "overview_expected": false, "note": "no shared content term with the policy; dense ranks it first"}
+{"id": "f002", "mode": "local", "type": "semantic_no_overlap", "query": "is it fine to connect a flash stick to my work laptop", "relevant": {"it_usb_policy.md": 3}, "forbidden": [], "overview_expected": false}
+{"id": "f003", "mode": "local", "type": "stopword_trap", "query": "how can i connect to the vpn", "relevant": {"it_vpn_setup.md": 3, "it_vpn_troubleshooting.md": 1}, "forbidden": [], "overview_expected": false, "note": "stop words (how/can/i/to/the) must not decide the lexical ranking"}
+{"id": "n001", "mode": "local", "type": "no_results", "query": "kubernetes autoscaling", "expect_empty": true, "forbidden": [], "overview_expected": false, "note": "no related document: must return an empty list, not 5 unrelated ones"}
+{"id": "n002", "mode": "local", "type": "no_results", "query": "best pizza toppings in rome", "expect_empty": true, "forbidden": [], "overview_expected": false}
+{"id": "n003", "mode": "local", "type": "no_results", "query": "quantum computing basics", "expect_empty": true, "forbidden": [], "overview_expected": false}
+{"id": "n004", "mode": "local", "type": "no_results", "query": "recipe for banana bread", "expect_empty": true, "forbidden": [], "overview_expected": false}

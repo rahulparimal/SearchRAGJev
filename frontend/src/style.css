@@ -8,3 +8,5 @@
 @media(max-width:650px){.admin-tabs,.settings-tabs{width:100%;justify-content:flex-start}.admin-tabs button,.settings-tabs button{padding:9px 10px;font-size:9px}.config-readonly{grid-template-columns:1fr}.runtime-row{flex-direction:column;gap:8px}}
 
 .mode-switch{display:inline-flex;gap:6px;margin-left:auto}.toggle-chip{border:1px solid var(--line,#2a2f3a);background:transparent;color:inherit;border-radius:999px;padding:4px 12px;font-size:12px;cursor:pointer}.toggle-chip.on{background:var(--accent,#6d5efc);border-color:transparent;color:#fff}
+
+.muted{color:#8fa1b4!important;display:flex;align-items:center;gap:8px}.status-msg.timings{font-family:'DM Mono',monospace;color:#8ea6bd}.web-badge{background:#243a52;color:#9fd0f5;border-radius:4px;padding:1px 5px;font:8px 'DM Mono',monospace;margin-right:3px}.snippet mark{background:#2d5a4f;color:#eafff6;border-radius:2px;padding:0 1px}.cites{list-style:none;margin:0 0 10px;padding:0;font-size:10px;color:#9fb4c4}.cites a{color:#7edcbd}.toggle:disabled{opacity:.4;cursor:not-allowed}.search-options{flex-wrap:wrap}

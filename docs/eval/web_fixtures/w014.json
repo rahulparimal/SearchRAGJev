@@ -1,0 +1,51 @@
+{
+ "id": "w014",
+ "query": "tcp three way handshake",
+ "recorded_at": "2026-10-01T06:19:15.013010+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "TCP 3-Way Handshake Process - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/computer-networks/tcp-3-way-handshake-process/",
+   "text": "Jul 9, 2026 \u00b7 The TCP 3-Way Handshake is the process used by the Transmission Control Protocol (TCP) to establish a reliable connection between a client and a server before data transmission begins.",
+   "published": ""
+  },
+  {
+   "title": "TCP 3-Way Handshake: SYN, SYN-ACK, ACK Explained",
+   "url": "https://blog.cloudmylab.com/tcp-ip-3-way-handshake",
+   "text": "Oct 14, 2025 \u00b7 Step-by-step breakdown of the TCP 3-way handshake. We cover SYN, SYN-ACK, ACK sequence, connection teardown, and common troubleshooting scenarios.",
+   "published": ""
+  },
+  {
+   "title": "The three-way handshake via TCP/IP - Windows Server ...Code sample",
+   "url": "https://learn.microsoft.com/en-us/troubleshoot/windows-server/networking/three-way-handshake-via-tcpip",
+   "text": "This article discusses the Transmission Control Protocol (TCP) three-way handshake process between a client and server when starting or ending a TCP connection. Applies to: Windows Server 2012 R2 See full list on learn.microsoft.com This article is intended for audiences who are familiar with Transmission Control Protocol/Internet Protocol (TCP/IP). It discusses the process of the TCP three-way handshake between a client and server when starting or ending a TCP connection. See full list on learn.microsoft.com The TCP level of the TCP/IP transport protocol is connection-oriented. Connection-oriented means that, before any data can be transmitted, a reliable connection must be obtained and acknowledged. TCP level data transmissions, connection establishment, and connection termination maintain specific control parameters that govern the entire process. The control bits are listed as follows: URG: Urgent Pointer field significant ACK: Acknowledgment field significant PSH: Push Function RST: Reset the connection SYN: Synchronize sequence numbers See full list on learn.microsoft.com Obtain RFC 793. RFCs may be obtained through the Internet as follows: See full list on learn.microsoft.com See more on Microsoft Docs",
+   "published": ""
+  },
+  {
+   "title": "TCP Three-Way Handshake Explained: SYN, SYN-ACK, ACK",
+   "url": "https://www.openpcap.com/wireshark/tcp-3-way-handshake",
+   "text": "Apr 1, 2026 \u00b7 What is the TCP 3-way handshake? Learn SYN, SYN-ACK, and ACK with a real Wireshark packet capture. Step-by-step sequence analysis and filters.",
+   "published": ""
+  },
+  {
+   "title": "What Is a Three-Way Handshake? - Coursera",
+   "url": "https://www.coursera.org/articles/three-way-handshake",
+   "text": "Mar 6, 2026 \u00b7 A three-way handshake creates a connection between two computers for the passing of information, but a four-way handshake terminates that connection with a pair of finish (FIN) and ACK messages. You can view a three-way handshake as important because it\u2019s a key mechanism for creating a secure connection over a TCP/IP network.",
+   "published": ""
+  },
+  {
+   "title": "TCP 3-Way Handshake Process - Online Tutorials Library",
+   "url": "https://www.tutorialspoint.com/article/tcp-3-way-handshake-process",
+   "text": "Mar 16, 2026 \u00b7 The TCP 3-way handshake is a fundamental process that ensures reliable connection establishment between client and server. This mechanism synchronizes sequence numbers, negotiates connection parameters, and confirms both parties are ready for data transmission, forming the foundation of reliable TCP communication.",
+   "published": ""
+  },
+  {
+   "title": "TCP 3-Way Handshake (SYN, SYN-ACK,ACK) - Guru99",
+   "url": "https://www.guru99.com/tcp-3-way-handshake.html",
+   "text": "Sep 3, 2026 \u00b7 TCP 3-Way Handshake is the connection-setup ritual that every TCP session begins with. A client and server exchange SYN, SYN-ACK, and ACK packets to synchronise sequence numbers and confirm both sides are ready before a single byte of application data is sent.",
+   "published": ""
+  }
+ ]
+}

@@ -1,0 +1,51 @@
+{
+ "id": "w021",
+ "query": "latest stable python release",
+ "recorded_at": "2026-10-01T06:19:33.301848+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Download Python | Python.org",
+   "url": "https://www.python.org/downloads/",
+   "text": "Looking for Python with a different OS? Python for Windows, Linux/Unix, macOS, Android, iOS, other Want to help test development versions of Python 3.15? Pre-releases, Docker images",
+   "published": ""
+  },
+  {
+   "title": "Python Release Python 3.14.8 | Python.org",
+   "url": "https://www.python.org/downloads/latest/",
+   "text": "A new command-line interface to inspect running Python processes using asynchronous tasks. The pdb module now supports remote attaching to a running Python process. For more details on the changes to Python 3.14, see What\u2019s new in Python 3.14. Build changes PEP 761: Python 3.14 and onwards no longer provides PGP signatures for release artifacts.",
+   "published": ""
+  },
+  {
+   "title": "Status of Python versions",
+   "url": "https://devguide.python.org/versions/",
+   "text": "May 27, 2026 \u00b7 Status of Python versions \u00b6 The main branch is currently the future Python 3.16, and is the only branch that accepts new features. The latest release for each Python version can be found on the download page.",
+   "published": ""
+  },
+  {
+   "title": "Python 3.12.14, 3.11.16 and 3.10.21 are now available ...",
+   "url": "https://blog.python.org/2026/08/python-31214-31116-31021/",
+   "text": "Aug 12, 2026 \u00b7 Python Releases Eclipse Your Security! New security releases for 3.10, 3.11 and 3.12 are now available.",
+   "published": ""
+  },
+  {
+   "title": "Python 3.10.22, 3.11.17, 3.12.15, 3.13.16 and 3.14.8 are now ...",
+   "url": "https://blog.python.org/2026/10/python-31022-31117/",
+   "text": "6 hours ago \u00b7 Python 3.12.15 is also a source-only security release, with security support continuing until October 2028. Python 3.13.16 is the last full maintenance release of 3.13; future 3.13 releases will contain security fixes only.",
+   "published": ""
+  },
+  {
+   "title": "What\u2019s new in Python 3.14 \u2014 Python 3.14.7 documentation",
+   "url": "https://docs.python.org/3/whatsnew/3.14.html",
+   "text": "6 days ago \u00b7 Summary \u2013 Release highlights \u00b6 Python 3.14 is the latest stable release of the Python programming language, with a mix of changes to the language, the implementation, and the standard library. The biggest changes include template string literals, deferred evaluation of annotations, and support for subinterpreters in the standard library.",
+   "published": ""
+  },
+  {
+   "title": "Latest Python Releases, Changelog & Updates - ReleaseBytes",
+   "url": "https://releasebytes.com/python",
+   "text": "3 days ago \u00b7 The latest Python release notes, changelogs and updates, summarised in plain English - new features, breaking changes, security advisories and deprecations, updated continuously.",
+   "published": ""
+  }
+ ]
+}

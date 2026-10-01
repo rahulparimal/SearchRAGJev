@@ -1,0 +1,51 @@
+{
+ "id": "w004",
+ "query": "postgres create index concurrently",
+ "recorded_at": "2026-10-01T06:18:48.947767+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "PostgreSQL: Documentation: 18: CREATE INDEX",
+   "url": "https://www.postgresql.org/docs/current/sql-createindex.html",
+   "text": "Another difference is that a regular CREATE INDEX command can be performed within a transaction block, but CREATE INDEX CONCURRENTLY cannot. Concurrent builds for indexes on partitioned tables are currently not supported.",
+   "published": ""
+  },
+  {
+   "title": "How to Use Postgres CREATE INDEX CONCURRENTLY - Bytebase",
+   "url": "https://www.bytebase.com/blog/postgres-create-index-concurrently/",
+   "text": "Aug 27, 2025 \u00b7 Learn how to use CREATE INDEX CONCURRENTLY in Postgres to build indexes without blocking writes. Pitfalls, safety checks, and performance tips.",
+   "published": ""
+  },
+  {
+   "title": "CREATE INDEX CONCURRENTLY: The Complete PostgreSQL Guide",
+   "url": "https://migrationpilot.dev/blog/create-index-concurrently-postgresql",
+   "text": "Feb 24, 2026 \u00b7 CREATE INDEX CONCURRENTLY: The Complete PostgreSQL Guide CREATE INDEX CONCURRENTLY is the single most important command for safely adding indexes to production PostgreSQL tables. This guide covers how it works, why it sometimes fails, how to handle failures, and the related REINDEX CONCURRENTLY command.",
+   "published": ""
+  },
+  {
+   "title": "postgresql - CREATE INDEX CONCURRENTLY is executed but the ...",
+   "url": "https://stackoverflow.com/questions/74865499/create-index-concurrently-is-executed-but-the-concurrently-option-lost-after-cre",
+   "text": "Dec 20, 2022 \u00b7 In my Postgres 14.3 database on AWS RDS, I want to create an index without blocking other database operations. So I want to use the CONCURRENTLY option and I executed the following statement succes...",
+   "published": ""
+  },
+  {
+   "title": "postgresql - Postgres building an index concurrently - Stack ...",
+   "url": "https://stackoverflow.com/questions/43125789/postgres-building-an-index-concurrently",
+   "text": "Mar 30, 2017 \u00b7 I'm reading this from the Postgres docs: Building Indexes Concurrently ... PostgreSQL supports building indexes without locking out writes. This method is invoked by specifying the CONCURRENTLY option of CREATE INDEX.",
+   "published": ""
+  },
+  {
+   "title": "How to Create Indexes Concurrently in PostgreSQL",
+   "url": "https://oneuptime.com/blog/post/2026-01-21-postgresql-concurrent-index/view",
+   "text": "Jan 21, 2026 \u00b7 A guide to creating PostgreSQL indexes without blocking queries using CONCURRENTLY, including best practices and troubleshooting.",
+   "published": ""
+  },
+  {
+   "title": "Postgres: How to Create Index Concurrently Using Liquibase ...",
+   "url": "https://www.codegenes.net/blog/postgres-how-to-create-index-concurrently-using-liquibase/",
+   "text": "Jan 16, 2026 \u00b7 This is risky in production environments with high traffic. PostgreSQL offers a solution: `CREATE INDEX CONCURRENTLY`. This command creates an index without exclusive table locks, allowing writes to continue during creation. But what if you use Liquibase\u2014your go-to tool for database migrations\u2014to manage schema changes?",
+   "published": ""
+  }
+ ]
+}

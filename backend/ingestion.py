@@ -11,6 +11,7 @@ from jev import JevDecisionProvider
 from pipeline import DocumentExtractor,StructureChunker
 from providers import LocalEmbedder,QdrantVectors
 import extensions
+from cache import cache
 
 PROFILES={'narrative':420,'table_heavy':260,'code':320,'policy':500}
 SUPPORTED={'.pdf','.docx','.txt','.md','.html'}
@@ -28,7 +29,9 @@ def sweep_stale(db,minutes:int|None=None)->int:
         t=d.processing_started_at or d.created_at
         if t.tzinfo is None:t=t.replace(tzinfo=timezone.utc)
         if t<cutoff:d.status='failed';n+=1
-    db.commit();return n
+    db.commit()
+    if n:cache.bump('corpus')
+    return n
 
 def _retire_superseded(db,doc,store):
     """After a newer version of a file is searchable, drop older versions of the same filename/owner."""
@@ -36,7 +39,7 @@ def _retire_superseded(db,doc,store):
         store.remove_doc(old.id);db.execute(delete(Chunk).where(Chunk.doc_id==old.id));db.delete(old)
         try:Path(old.snapshot_path).unlink(missing_ok=True)
         except OSError:pass
-    db.commit()
+    db.commit();cache.bump('corpus')
 
 def ingest_document(db,doc_id:str,embedder=None,store=None)->dict:
     """Idempotent. A previously ready document stays 'ready' (and searchable) during re-ingest: new vectors are upserted first
@@ -62,12 +65,12 @@ def ingest_document(db,doc_id:str,embedder=None,store=None)->dict:
         store.upsert([models.PointStruct(id=cid,vector=vec,payload={'doc_id':doc_id,'chunk_id':cid,'page':records[n][0],'title':doc.title}) for n,(cid,vec) in enumerate(zip(ids,embeddings))])
         db.execute(delete(Chunk).where(Chunk.doc_id==doc_id))
         for cid,(page,text) in zip(ids,records):db.add(Chunk(id=cid,doc_id=doc_id,page=page,text=text,token_estimate=max(1,len(text.split())*4//3)))
-        doc.status='ready';db.commit()
+        doc.status='ready';db.commit();cache.bump('corpus')
         store.remove_doc_except(doc_id,ids);_retire_superseded(db,doc,store)
         return {'status':'ready','chunks':len(records),'profile':profile}
     except Exception:
         db.rollback();d=db.get(Doc,doc_id)
-        if d and not was_ready:d.status='failed';db.commit()
+        if d and not was_ready:d.status='failed';db.commit();cache.bump('corpus')
         raise
 
 def register_file(db,path:Path,upload_dir:Path,owner:str='system',acl:str='*',title:str='')->Doc:

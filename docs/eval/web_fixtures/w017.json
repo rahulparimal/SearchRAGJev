@@ -1,0 +1,51 @@
+{
+ "id": "w017",
+ "query": "redis expire command ttl",
+ "recorded_at": "2026-10-01T06:19:22.806520+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "EXPIRE - Redis",
+   "url": "https://redis.io/docs/latest/commands/expire/",
+   "text": "In Redis versions prior to 2.1.3 altering a key with an expire set using a command altering its value had the effect of removing the key entirely. This semantics was needed because of limitations in the replication layer that are now fixed.",
+   "published": ""
+  },
+  {
+   "title": "How to Use Redis TTL to Expire Keys Automatically",
+   "url": "https://oneuptime.com/blog/post/2026-03-31-redis-ttl-expire-keys-automatically/view",
+   "text": "Mar 31, 2026 \u00b7 Learn how to use Redis TTL to expire keys automatically - covering EXPIRE, EXPIREAT, TTL, PTTL, PERSIST, and expiration patterns.",
+   "published": ""
+  },
+  {
+   "title": "TTL | Docs - Redis",
+   "url": "https://redis.io/docs/latest/commands/ttl/",
+   "text": "The command returns -1 if the key exists but has no associated expire. See also the PTTL command that returns the same information with milliseconds resolution (Only available in Redis 2.6 or greater).",
+   "published": ""
+  },
+  {
+   "title": "Redis EXPIRE and TTL: Expiring Keys Explained",
+   "url": "https://learn.programmingline.com/learn/redis/redis-expire-ttl",
+   "text": "Aug 10, 2026 \u00b7 Learn how Redis EXPIRE, TTL, PEXPIRE, and PERSIST work internally, with runnable redis-cli examples and the TTL mistakes that silently leak memory.",
+   "published": ""
+  },
+  {
+   "title": "Redis TTL & Key Expiration Explained - unanswered.io",
+   "url": "https://unanswered.io/guide/redis-ttl-key-expiration-guide",
+   "text": "Aug 21, 2026 \u00b7 Learn how Redis and Azure Cache for Redis handle TTL, key expiration mechanics, practical commands like EXPIRE and TTL, and best practices for temporary data management.",
+   "published": ""
+  },
+  {
+   "title": "Redis TTL Converter (Free Online Tool) - 1bench.dev",
+   "url": "https://1bench.dev/tools/redis-ttl-converter",
+   "text": "Convert Redis TTL values between seconds, minutes, hours, and days. Generate EXPIRE, EXPIREAT, and PEXPIRE commands. Free online tool.",
+   "published": ""
+  },
+  {
+   "title": "Best Practices for Using Redis EXPIRE and TTL Commands",
+   "url": "https://devops.aibit.im/en/article/best-practices-redis-expire-ttl",
+   "text": "Nov 4, 2025 \u00b7 The EXPIRE and TTL (and their millisecond-aware counterparts PEXPIRE and PTTL) commands are fundamental tools for achieving this data expiration control. If you forget expirations on temporary data, Redis can quietly fill memory with stale cache entries, old sessions, and abandoned lock keys.",
+   "published": ""
+  }
+ ]
+}

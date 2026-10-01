@@ -1,0 +1,51 @@
+{
+ "id": "w013",
+ "query": "bm25 ranking function explained",
+ "recorded_at": "2026-10-01T06:19:12.415454+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Okapi BM25 - Wikipedia",
+   "url": "https://en.wikipedia.org/wiki/Okapi_BM25",
+   "text": "Okapi BM25 In information retrieval, Okapi BM25 (BM is an abbreviation of best matching) is a ranking function used by search engines to estimate the relevance of documents to a given search query. It is based on the probabilistic retrieval framework developed in the 1970s and 1980s by Stephen E. Robertson, Karen Sp\u00e4rck Jones, and others.",
+   "published": ""
+  },
+  {
+   "title": "What is BM25 (Best Matching 25) Algorithm - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/nlp/what-is-bm25-best-matching-25-algorithm/",
+   "text": "Dec 16, 2025 \u00b7 BM25 (Best Matching 25) is a ranking algorithm used in information retrieval systems to determine how relevant a document is to a given search query. It\u2019s an improved version of the traditional TF-IDF (Term Frequency\u2013Inverse Document Frequency) approach and is widely used in modern search engines and databases.",
+   "published": ""
+  },
+  {
+   "title": "BM25 Explained: How Keyword Relevance Scoring Works (2026)",
+   "url": "https://dataaspirant.com/blog/bm25-explained/",
+   "text": "Sep 2, 2026 \u00b7 BM25 stands for Best Matching 25: the twenty-fifth iteration of a ranking function developed by Stephen Robertson, Karen Sp\u00e4rck Jones and colleagues in the probabilistic retrieval tradition. It was battle-tested through the Okapi system at the TREC retrieval competitions of the 1990s. The theory underneath asks a clean question: given what we can count about a document, what is the ...",
+   "published": ""
+  },
+  {
+   "title": "What Is BM25? How the Best Matching Algorithm Works",
+   "url": "https://scienceinsights.org/what-is-bm25-how-the-best-matching-algorithm-works/",
+   "text": "Where BM25 Came From The \u201cBM\u201d stands for \u201cBest Matching,\u201d and 25 is simply the iteration number in a series of ranking functions developed as part of the Okapi information retrieval system, a research project from the 1990s at City, University of London.",
+   "published": ""
+  },
+  {
+   "title": "BM25 Zero-to-Hero: The Essential Guide for Developers ...",
+   "url": "https://martinuke0.github.io/posts/2026-01-04-bm25-zero-to-hero-the-essential-guide-for-developers-mastering-search-retrieval/",
+   "text": "Jan 4, 2026 \u00b7 BM25 (Best Matching 25) is a probabilistic ranking function that powers modern search engines by scoring document relevance based on query terms, term frequency saturation, inverse document frequency, and document length normalization. As an information retrieval engineer, you\u2019ll use BM25 for precise lexical matching in applications like Elasticsearch, Azure Search, and custom retrievers ...",
+   "published": ""
+  },
+  {
+   "title": "BM25 Explained: The Algorithm Behind Modern Search",
+   "url": "https://fondralabs.com/blog/nlp-foundations/bm25-explained-the-algorithm-behind-modern-search.html",
+   "text": "Jun 10, 2026 \u00b7 What is BM25? Learn how the most popular search ranking algorithm improves on TF-IDF, with clear examples, formulas, and Python code.",
+   "published": ""
+  },
+  {
+   "title": "What is BM25 Full-Text Search? Ranking Explained | Spice AI",
+   "url": "https://spice.ai/learn/bm25-full-text-search",
+   "text": "Learn how BM25 ranks full-text search results, with a worked scoring example, tuning guidance, SQL configuration, and comparisons with TF-IDF and vector search.",
+   "published": ""
+  }
+ ]
+}

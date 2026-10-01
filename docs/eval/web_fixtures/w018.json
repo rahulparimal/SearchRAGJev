@@ -1,0 +1,51 @@
+{
+ "id": "w018",
+ "query": "fastapi dependency injection",
+ "recorded_at": "2026-10-01T06:19:25.367274+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Dependencies - FastAPI",
+   "url": "https://fastapi.tiangolo.com/tutorial/dependencies/",
+   "text": "FastAPI Learn Tutorial - User Guide Dependencies Dependencies FastAPI has a very powerful but intuitive Dependency Injection system. It is designed to be very simple to use, and to make it very easy for any developer to integrate other components with FastAPI. What is \"Dependency Injection\" \"Dependency Injection\" means, in programming, that there is a way for your code (in this case, your path ...",
+   "published": ""
+  },
+  {
+   "title": "Dependency Injection in FastAPI - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/python/dependency-injection-in-fastapi/",
+   "text": "Jul 23, 2025 \u00b7 In conclusion, Dependency Injection in FastAPI is a powerful mechanism that enhances code modularity and maintainability. By efficiently managing and injecting dependencies, FastAPI allows developers to create more organized, scalable, and testable applications.",
+   "published": ""
+  },
+  {
+   "title": "Mastering Dependency Injection in FastAPI: Clean, Scalable ...",
+   "url": "https://medium.com/@azizmarzouki/mastering-dependency-injection-in-fastapi-clean-scalable-and-testable-apis-5f78099c3362",
+   "text": "Mar 25, 2025 \u00b7 One of FastAPI\u2019s most powerful (but often underutilized) features is its native support for Dependency Injection (DI) \u2014 a design pattern that keeps your code clean, modular, and easy to test ...",
+   "published": ""
+  },
+  {
+   "title": "Classes as Dependencies - FastAPI - tiangolo",
+   "url": "https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/",
+   "text": "FastAPI Learn Tutorial - User Guide Dependencies Classes as Dependencies Before diving deeper into the Dependency Injection system, let's upgrade the previous example. A dict from the previous example In the previous example, we were returning a dict from our dependency (\"dependable\"):",
+   "published": ""
+  },
+  {
+   "title": "How to Implement Dependency Injection in FastAPI",
+   "url": "https://www.freecodecamp.org/news/how-to-implement-dependency-injection-in-fastapi",
+   "text": "Nov 14, 2025 \u00b7 How to Use Function Dependencies in FastAPI A function dependency is a helper function (such as for authentication or data retrieval) that can be injected into path operations. To demonstrate, we'll create a simple user authentication dependency using an in-memory database\u2014a list of dictionaries. Recall the folder structure from earlier?",
+   "published": ""
+  },
+  {
+   "title": "FastAPI - Dependencies - GeeksforGeeks",
+   "url": "https://www.geeksforgeeks.org/python/fastapi-dependencies/",
+   "text": "Jul 23, 2025 \u00b7 In this article, we will explore FastAPI - Dependencies. FastAPI is a state-of-the-art, high-performance web framework for creating Python-based APIs. It is built on the principles of dependency injection and type hinting, which facilitate the creation of clean, maintainable, and scalable code. This article delves deeper into topics such as Dependency Injection, Dependency Provider, Dependency ...",
+   "published": ""
+  },
+  {
+   "title": "FastAPI Dependency Injection: The Complete Guide from Basics ...",
+   "url": "https://hrekov.com/blog/fastapi-dependency-injection-vs-depends",
+   "text": "Dec 8, 2025 \u00b7 A comprehensive guide to FastAPI's Dependency Injection system. Learn the difference between DI and Depends, teardown lifecycles, class-based dependencies, singletons, path decorators, and testing with overrides.",
+   "published": ""
+  }
+ ]
+}

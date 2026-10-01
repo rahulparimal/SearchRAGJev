@@ -1,0 +1,51 @@
+{
+ "id": "w016",
+ "query": "nginx proxy_buffering directive",
+ "recorded_at": "2026-10-01T06:19:20.209147+00:00",
+ "provider": "ddgs",
+ "engines": "Yahoo, Bing",
+ "hits": [
+  {
+   "title": "Module ngx_http_proxy_module - nginx",
+   "url": "https://nginx.org/en/docs/http/ngx_http_proxy_module.html",
+   "text": "When buffering is enabled, nginx receives a response from the proxied server as soon as possible, saving it into the buffers set by the proxy_buffer_size and proxy_buffers directives.",
+   "published": ""
+  },
+  {
+   "title": "proxy_buffering \u2014 Directive Reference | NGINX101",
+   "url": "https://nginx101.com/directives/proxy_buffering/",
+   "text": "The proxy_buffering directive in NGINX controls whether responses from proxied servers are buffered before being sent to clients. When set to 'on', NGINX buffers the entire response from the proxied server, which can improve performance by allowing NGINX to send the response to the client in a single, optimized network operation.",
+   "published": ""
+  },
+  {
+   "title": "Proxy Buffer Configuration Auto-Adjustment | NGINX Documentation",
+   "url": "https://docs.nginx.com/nginx-ingress-controller/configuration/proxy-buffers-configuration/",
+   "text": "Proxy Buffer Configuration Auto-Adjustment This document explains how the --enable-directive-autoadjust option prevents NGINX configuration errors by automatically adjusting some HTTP proxy buffer directives.",
+   "published": ""
+  },
+  {
+   "title": "NGINX Reverse Proxy",
+   "url": "https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/",
+   "text": "The proxy_buffers and proxy_buffer_size directives control how NGINX stores and buffers data. The proxy_buffers directive controls the size and the number of buffers allocated for a request. The first part of the response from a proxied server is stored in a separate buffer, the size of which is set with the proxy_buffer_size directive.",
+   "published": ""
+  },
+  {
+   "title": "Nginx Proxy Buffers - Compile N Run",
+   "url": "https://www.compilenrun.com/docs/middleware/nginx/nginx-reverse-proxy/nginx-proxy-buffers/",
+   "text": "Configuring Proxy Buffers Nginx provides several directives to control proxy buffering behavior. Let's examine the most important ones: Basic Buffer Configuration ... Let's break down these directives: proxy_buffering This directive enables or disables buffering of responses from the upstream server:",
+   "published": ""
+  },
+  {
+   "title": "proxy_buffers \u2014 Directive Reference | NGINX101",
+   "url": "https://nginx101.com/directives/proxy_buffers/",
+   "text": "The proxy_buffers directive is essential in controlling how NGINX interacts with upstream servers during reverse proxying. It specifies the number and size of buffers allocated to hold the received data from the proxied server before sending it to the client. Each buffer is used to store segments of the response, allowing NGINX to aggregate data efficiently before delivery. The directive ...",
+   "published": ""
+  },
+  {
+   "title": "Nginx proxy buffering - changing buffer's number vs size ?",
+   "url": "https://stackoverflow.com/questions/33460569/nginx-proxy-buffering-changing-buffers-number-vs-size",
+   "text": "Nov 1, 2015 \u00b7 The documentation for the proxy_buffering directive provides a bit more explanation: When buffering is enabled, nginx receives a response from the proxied server as soon as possible, saving it into the buffers set by the proxy_buffer_size and proxy_buffers directives.",
+   "published": ""
+  }
+ ]
+}
