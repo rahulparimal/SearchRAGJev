@@ -69,6 +69,23 @@ NOT done, with Opus's reasoning:
 - Page fetch has a residual DNS-rebinding window (documented in webfetch.py).
 - The Quick-answer cache is untested against a real provider and off by default.
 
+## Session: settings, search floor, Deep Research template, history (status)
+Done and tested (unit tests; live checks listed in the session notes): admin settings save only changed fields, explicit clear, trimming, normalised
+URLs, host-change clears the saved key with a warning (keyless local hosts such as Ollama now work), effective-model table, tier resolution consistent;
+Deep Research never ends as a bare error (evidence-only fallback, early `partial`, immediate failover with budget split, local-model prompt),
+template report with computed sections (docs/DEEP_RESEARCH_TEMPLATE.md), more evidence (3 queries x 6 sources, up to 30, thin-subquestion round,
+admin switch to read full pages), relevance floor for local search (docs/eval/search_floor_cases.jsonl, scripts/floor_eval.py), last-5 history and
+server-held Quick answer conversations.
+
+Open / not done:
+- Floor thresholds were calibrated on ONE corpus (two books + sample company docs; 76 cases). Re-run `scripts/floor_eval.py` after changing documents or
+  models. One out-of-corpus false positive remains ("tallest mountain" matches Gita passages that Jev itself scores 0.52).
+- Deep Research: no measured-latency timeouts or pre-flight probe; section-by-section writing for small models; no plan editing; the template
+  report has not been re-evaluated with `scripts/research_eval.py` (previous results predate it).
+- Deep Research on a CPU-only local 7B writer will usually fall back to the evidence-only report (time limit); use a hosted non-reasoning writer.
+- History stores query text (and Quick answer turns) in plaintext Postgres; retention is "newest 5 per user". No admin purge UI (deleting a user purges theirs).
+- The sample `.env`-level LLM key can still shadow UI-saved settings unless cleared (the effective table now shows this).
+
 ## Cleanup needed (unchanged from the original QA)
 Test users: qa-r1, qa-r2, qa-reader1, qa-reader2, rv_reader, evalr-* (no delete endpoint). Test document "QA Restricted Bonus Matrix". Rotate the TypeSafe and LLM keys, Postgres password and APP_SECRET_KEY (they were in an old working-tree `.env.example`; `.env.bak` holds copies).
 
