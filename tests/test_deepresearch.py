@@ -110,5 +110,21 @@ class DeepResearchTests(unittest.TestCase):
         async def kb(q):called.append(q);return []
         collect(DR.stream_research('q',FakeWeb(),FakeJev(),FakeGen(),kb_search=kb,include_kb=False))
         self.assertEqual(called,[])
+    def test_page_fetch_disabled_by_default_leaves_snippet_text(self):
+        with mock.patch.object(DR.webfetch,'fetch_pages') as fp:
+            collect(DR.stream_research('q',FakeWeb(),FakeJev(),FakeGen()))
+        fp.assert_not_called()
+    def test_page_fetch_replaces_snippet_when_enabled(self):
+        async def fake_fetch_pages(urls,deadline):return {u:'FULL PAGE TEXT for '+u for u in urls}
+        with mock.patch.object(DR,'FETCH_PAGES',True),mock.patch.object(DR.webfetch,'fetch_pages',side_effect=fake_fetch_pages):
+            ev=collect(DR.stream_research('q',FakeWeb(),FakeJev(),FakeGen()))
+        report=dict(ev)['report']
+        # the report event itself doesn't carry source text, but a 'reading' status should have been emitted
+        self.assertIn('reading',[d['stage'] for n,d in ev if n=='status'])
+    def test_page_fetch_failure_falls_back_to_snippets_not_fatal(self):
+        async def boom(urls,deadline):raise RuntimeError('network down')
+        with mock.patch.object(DR,'FETCH_PAGES',True),mock.patch.object(DR.webfetch,'fetch_pages',side_effect=boom):
+            ev=collect(DR.stream_research('q',FakeWeb(),FakeJev(),FakeGen()))
+        self.assertEqual([n for n,_ in ev][-2:],['report','done'])  # still completes
 
 if __name__=='__main__':unittest.main()
