@@ -6,7 +6,7 @@ export type Block={t:'h2'|'h3';text:string}|{t:'p';runs:Run[]}|{t:'ul';items:Run
 export type Citation={n:number;title:string;url:string|null;domain:string|null;source:string};
 export type Gap={id:string;question:string;reason:string};
 export type Verification={status:'verified'|'partial'|'unavailable'|'skipped';checked:number;supported:number;flagged:number;unchecked:number};
-export type Report={title:string|null;blocks:Block[];citations:Citation[];gaps:Gap[];verification:Verification;markdown:string;model:string;elapsed_ms:number;stats:any};
+export type Report={cached?:boolean;title:string|null;blocks:Block[];citations:Citation[];gaps:Gap[];verification:Verification;markdown:string;model:string;elapsed_ms:number;stats:any};
 export type SubqStatus={id:string;question:string;state:'pending'|'searching'|'done'|'failed';sources:{title:string;domain:string;url:string}[];reason?:string};
 export type PartialSource={n:number;title:string;url:string|null;domain:string|null;source:string};
 export type ResearchState={
@@ -75,7 +75,9 @@ export function ReportView({report,onCopy}:{report:Report;onCopy:()=>void}){
    {report.verification.status==='partial'&&` · ${report.verification.supported} of ${report.verification.checked} checked statements verified (some claims were not checked)`}
    {report.verification.status==='unavailable'&&' · citation verification was unavailable for this run'}
    {' · '}{(report.elapsed_ms/1000).toFixed(0)}s
+   {report.cached&&' · served from cache'}
    <button type="button" className="research-copy" onClick={onCopy}><Copy size={12}/> Copy markdown</button>
+   <button type="button" className="research-copy" onClick={()=>{const u=URL.createObjectURL(new Blob([report.markdown],{type:'text/markdown'}));const a=document.createElement('a');a.href=u;a.download=`${(report.title||'research-report').replace(/[^\w-]+/g,'-').slice(0,60)}.md`;a.click();URL.revokeObjectURL(u)}}>Download .md</button>
   </div>
  </div>;
 }

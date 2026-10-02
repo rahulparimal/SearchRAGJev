@@ -25,7 +25,7 @@ from telemetry import Timer
 from execpool import run_io,run_search,run_ov
 import logconf,config_store
 from cache import cache
-import overview as ov,plan as planner,direct,deepresearch as research
+import overview as ov,plan as planner,direct,deepresearch as research,tokencache
 from extensions import run as run_extension
 from urlcheck import validate_provider_url
 from jev import prewarm, AsyncJev, noul_scores_batch, blend_order, parse_blend
@@ -111,7 +111,7 @@ def health():
  probe('postgres',pg);probe('qdrant',qd);probe('redis',rd)
  ok=all(v=='ok' for v in parts.values());parts['embedder']='ok' if embedder.ready else 'warming'  # warming is informational, not unhealthy
  from jev import health_snapshot
- return JSONResponse({'status':'ok' if ok else 'degraded','components':parts,'jev':health_snapshot()},status_code=200 if ok else 503)
+ return JSONResponse({'status':'ok' if ok else 'degraded','components':parts,'jev':health_snapshot(),'research_active':research._active[0],'token_cache':tokencache.snapshot()},status_code=200 if ok else 503)
 class LoginBody(BaseModel): username:str; password:str
 class UserCreate(BaseModel): username:str; password:str; role:str='reader'
 @app.post('/auth/login')

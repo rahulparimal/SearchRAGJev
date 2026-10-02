@@ -2,6 +2,7 @@ import asyncio,json,sys,unittest
 from unittest import mock
 sys.path.insert(0,'backend')
 import deepresearch as DR
+import tokencache as TC
 
 def aio(c):return asyncio.run(c)
 def collect(gen):
@@ -39,10 +40,16 @@ class FakeJev:
     def __init__(self,enabled=True,score=0.9):self.enabled=enabled;self._score=score;self.calls=0
     async def decide(self,state,questions,timeout_ms=None):
         self.calls+=1
-        return {'supported':{'noul':self._score}} if self._score is not None else {}
+        return {k:{'noul':self._score} for k in questions} if self._score is not None else {}
 
 class DeepResearchTests(unittest.TestCase):
-    def setUp(self):DR._active[0]=0
+    def setUp(self):
+        DR._active[0]=0;TC.reset();TC.ENABLED=False  # off by default so tests never see each other's cached reports; cache tests opt in
+        self.addCleanup(setattr,TC,'ENABLED',True)
+    def enable_cache(self):
+        import os;from cache import cache
+        TC.ENABLED=True;cache.lru.clear();cache.r=None
+        p=mock.patch.dict(os.environ);p.start();os.environ.pop('REDIS_URL',None);self.addCleanup(p.stop);self.addCleanup(cache.lru.clear)
     def test_busy_when_at_max_concurrent(self):
         DR._active[0]=DR.MAX_CONCURRENT
         ev=collect(DR.stream_research('q',FakeWeb(),FakeJev(),FakeGen()))
@@ -126,5 +133,36 @@ class DeepResearchTests(unittest.TestCase):
         with mock.patch.object(DR,'FETCH_PAGES',True),mock.patch.object(DR.webfetch,'fetch_pages',side_effect=boom):
             ev=collect(DR.stream_research('q',FakeWeb(),FakeJev(),FakeGen()))
         self.assertEqual([n for n,_ in ev][-2:],['report','done'])  # still completes
+    def test_report_cache_second_identical_run_spends_no_llm_tokens(self):
+        self.enable_cache()
+        g1=FakeGen();collect(DR.stream_research('Compare A and B please',FakeWeb(),FakeJev(),g1))
+        g2=FakeGen();web2=FakeWeb()
+        ev=collect(DR.stream_research('compare a and b please?',web2,FakeJev(),g2))
+        self.assertEqual(g2.calls,[]);self.assertEqual(web2.calls,[]);self.assertTrue(dict(ev)['report']['cached'])
+    def test_kb_reports_are_never_cached(self):
+        self.enable_cache()
+        async def kb(q):return [{'title':'D','text':'t','page':1}]
+        collect(DR.stream_research('q kb',FakeWeb(),FakeJev(),FakeGen(),kb_search=kb,include_kb=True))
+        g=FakeGen();collect(DR.stream_research('q kb',FakeWeb(),FakeJev(),g,kb_search=kb,include_kb=True))
+        self.assertTrue(g.calls)
+    def test_plan_is_cached_across_different_reports(self):
+        self.enable_cache()
+        collect(DR.stream_research('topic x',FakeWeb(),FakeJev(),FakeGen()))
+        TC_keys=TC.snapshot()['namespaces'];self.assertEqual(TC_keys['plan']['miss'],1)
+    def test_simple_question_routed_by_jev_skips_the_llm_planner(self):
+        class J(FakeJev):
+            async def decide(self,state,questions,timeout_ms=None):
+                return {'complex':{'noul':0.05}} if 'complex' in questions else await super().decide(state,questions,timeout_ms)
+        g=FakeGen();ev=collect(DR.stream_research('who wrote hamlet',FakeWeb(),J(),g))
+        self.assertEqual(len(g.calls),1)  # report call only; the planner LLM call was replaced by Jev routing
+        self.assertEqual(dict(ev)['plan']['routed'],'simple')
+    def test_reflection_recovers_a_gap_with_a_retry_query(self):
+        class W(FakeWeb):
+            async def search(self,q,limit=8,freshness=None):
+                self.calls.append(q)
+                if q=='q1':return [],{}
+                return ([dict(self.hits[0],url='https://b.example/retry')] if q=='sub one' else self.hits),{}
+        web=W();ev=collect(DR.stream_research('reflect topic',web,FakeJev(),FakeGen()))
+        self.assertIn('reflecting',[d['stage'] for n,d in ev if n=='status']);self.assertEqual(dict(ev)['report']['gaps'],[])
 
 if __name__=='__main__':unittest.main()
