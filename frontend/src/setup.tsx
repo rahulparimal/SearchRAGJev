@@ -1,7 +1,7 @@
 import{useState}from'react';
 import{CheckCircle2,XCircle,LoaderCircle,Server}from'lucide-react';
 
-const PRESETS=[
+export const PRESETS=[
  {id:'openai',label:'OpenAI',base:'https://api.openai.com/v1',models:['gpt-4o-mini','gpt-4.1-mini'],key:true,hint:'Paste an OpenAI API key.'},
  {id:'openrouter',label:'OpenRouter',base:'https://openrouter.ai/api/v1',models:['meta-llama/llama-3.3-70b-instruct','openai/gpt-4o-mini'],key:true,hint:'Paste an OpenRouter API key; the model id includes the vendor, e.g. openai/gpt-4o-mini.'},
  {id:'ollama',label:'Ollama (local model)',base:'http://localhost:11434/v1',models:['llama3.2','qwen2.5'],key:false,hint:'Runs on your machine, no key and nothing leaves it. Install from ollama.com, then run: ollama pull llama3.2. If this app runs in Docker, use http://host.docker.internal:11434/v1 as the URL.'},
@@ -39,4 +39,20 @@ export function QuickSetup({api,headers,secrets,setSecrets,config,onSave,onSkip,
   </div>
   <div className="qs-actions"><button type="button" className="primary" disabled={busy||(!secrets.llm_base_url&&!secrets.typesafe_api_key)} onClick={save}><CheckCircle2 size={15}/> Save and apply</button>{onSkip&&<button type="button" className="refresh-btn" onClick={onSkip}>Skip for now</button>}</div>
  </div>;
+}
+
+export function ProviderSelect({base,onPick,label}:{base:string;onPick:(p:typeof PRESETS[number])=>void;label?:string}){
+ const cur=presetOf(base||'');
+ return <label>{label||'Service provider'} <span className="field-tag">Fills the URL; edit it below for anything else</span>
+  <select value={cur?.id||''} onChange={e=>{const p=PRESETS.find(x=>x.id===e.target.value);if(p)onPick(p)}}>
+   <option value="" disabled>Choose a provider...</option>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
+  </select></label>;
+}
+
+export function EndpointTest({api,headers,base,model,apiKey}:{api:string;headers:()=>{[k:string]:string};base:string;model:string;apiKey:string}){
+ const[t,setT]=useState<{state:'idle'|'busy'|'ok'|'fail';msg?:string}>({state:'idle'});
+ async function run(){setT({state:'busy'});const r=await fetch(api+'/admin/llm/test',{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify({base_url:base,model,api_key:apiKey})});const j=await r.json().catch(()=>({}));
+  setT(r.ok&&j.ok?{state:'ok',msg:`Working (${j.latency_ms} ms)`}:{state:'fail',msg:`Failed: ${r.ok?j.error:(typeof j.detail==='string'?j.detail:`http_${r.status}`)}`})}
+ return <div className="qs-row"><button type="button" className="refresh-btn" disabled={!base||!model||t.state==='busy'} onClick={run}>{t.state==='busy'?'Testing...':'Test connection'}</button>
+  {t.state==='ok'&&<span className="qs-ok"><CheckCircle2 size={14}/> {t.msg}</span>}{t.state==='fail'&&<span className="qs-fail"><XCircle size={14}/> {t.msg}</span>}</div>;
 }

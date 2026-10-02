@@ -487,7 +487,7 @@ class DeepResearchEndpoint(unittest.TestCase):
         self.assertEqual(ctx.exception.status_code,429)
     def test_success_streams_and_passes_consent_flags_through(self):
         captured={}
-        def fake_stream(query,web,jev,gen,kb_search=None,include_kb=False,refresh=False):
+        def fake_stream(query,web,jev,gen,kb_search=None,include_kb=False,refresh=False,gen2=None,secondary_role='failover'):
             captured.update(query=query,include_kb=include_kb,refresh=refresh,has_kb=kb_search is not None);return _aiter(['event: done\ndata: {}\n\n'])
         with self.enable_env(),mock.patch.object(A.research,'stream_research',side_effect=fake_stream):
             resp=aio(A.research_endpoint(A.ResearchBody(query='  deep question  ',web_consent=True,include_kb=True,refresh=True),reader('u9'),self.db))

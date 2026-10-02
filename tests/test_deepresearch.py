@@ -237,5 +237,29 @@ class DeepResearchTests(unittest.TestCase):
     def test_fallback_plan_searches_wider_than_a_normal_sub_question(self):
         web=FakeWeb();collect(DR.stream_research('fallback q',web,FakeJev(),FakeGen(plan='not json')))
         self.assertEqual(len(web.calls),2);self.assertIn('fallback q overview',web.calls)
+    def test_secondary_model_takes_over_when_primary_report_fails(self):
+        class Primary(FakeGen):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+                if system is DR.REPORT_SYSTEM:raise RuntimeError('503')
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+        sec=FakeGen();sec.model='fast-model'
+        ev=collect(DR.stream_research('failover q',FakeWeb(),FakeJev(),Primary(),gen2=sec))
+        rep=dict(ev)['report'];self.assertTrue(rep['stats']['failover']);self.assertEqual(rep['model'],'fast-model');self.assertEqual(rep['stats']['models']['report'],'fast-model')
+    def test_secondary_plans_when_role_is_planner_and_failover(self):
+        plans=[]
+        class Primary(FakeGen):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+                if system is DR.PLAN_SYSTEM:plans.append('primary')
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+        class Sec(FakeGen):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+                if system is DR.PLAN_SYSTEM:plans.append('secondary')
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+        sec=Sec();sec.model='fast-model'
+        ev=collect(DR.stream_research('role q',FakeWeb(),FakeJev(),Primary(),gen2=sec,secondary_role='planner_and_failover'))
+        self.assertEqual(plans,['secondary']);self.assertEqual(dict(ev)['report']['stats']['models']['plan'],'fast-model')
+    def test_unconfigured_secondary_is_ignored(self):
+        sec=FakeGen(configured=False);g=FakeGen();ev=collect(DR.stream_research('nosec q',FakeWeb(),FakeJev(),g,gen2=sec))
+        self.assertEqual(sec.calls,[]);self.assertFalse(dict(ev)['report']['stats']['failover'])
 
 if __name__=='__main__':unittest.main()

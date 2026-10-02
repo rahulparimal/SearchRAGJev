@@ -21,6 +21,13 @@ When no language model or Jev key is saved, the first administrator to sign in s
 
 Ollama notes: an API running in Docker cannot reach the host's `localhost`; use `http://host.docker.internal:11434/v1`. The first request loads the model into memory and can take 10-30 s (the test allows 45 s). Small local models answer Quick answer well but are weaker at Deep Research's structured report and citation discipline, so expect more rejected or partially verified reports than with a hosted model. Deep Research still needs a Jev key by default to verify citations.
 
+## Service providers and the secondary model
+Each LLM tab has a **service provider** dropdown (OpenAI, OpenRouter, Ollama, other) that fills the base URL. Deep Research also has a **secondary model** section: a fast non-reasoning model that takes over when the primary model fails or times out and, if you choose "Planning, and failover for the report", writes the research plan (reasoning models sometimes time out planning, which collapses a run to one query). It never inherits the base LLM; leave it empty to turn it off. A report written by the secondary model shows that model name, and `stats.failover` is true. Use "Test connection" before saving.
+
+The **Web search** tab picks the search provider with a dropdown: scraping only (Yahoo + DuckDuckGo, no key, throttles under load), Brave Search API, self-hosted SearXNG, or a chain of them with scraping as the last resort. Keys are stored encrypted and never shown again. Changing the provider rebuilds the chain (health tracking resets). Web search itself is still switched on in the Retrieval tab and per request; only the query text is sent to the chosen providers.
+
+Fixed in this change: the Deep Research tab's own model/URL/key were previously ignored (the app read the wrong setting names and always used the Overview/base LLM). After upgrading, a value you saved there now takes effect; check it is what you want.
+
 ## Runtime and security settings
 
 In **Admin console → Runtime & security**, review whether required deployment values are present. The page reports configuration status only and never returns secrets. Set `APP_SECRET_KEY`, `DATABASE_URL`, `QDRANT_URL`, `REDIS_URL`, `EMBEDDING_MODEL`, and `EMBEDDING_DIMENSION` in the deployment environment. Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` before the first deployment to create the bootstrap administrator; later password changes are not controlled by those environment values. Set `CORS_ORIGINS` to the production frontend origin.
