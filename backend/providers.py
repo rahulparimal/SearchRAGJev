@@ -94,9 +94,11 @@ def resolve_llm(g,tiers):
  """tiers: [(base_env,key_env,model_env), ...] tried in order; base/key/model are taken together from the SAME tier so a
  key is never paired with a different provider's base URL (the same rule as direct._cfg and OverviewGenerator._cfg).
  -> (base_url_or_None, key, model)."""
+ pending=''  # a model set on a tier with no URL of its own applies on the next tier that has one (same as the AI Overview does)
  for be,ke,me in tiers:
-  b=(g(be,be) or '').strip()
-  if b:return safe_provider_url(b),(g(ke,ke) or ''),(g(me,me) or '')
+  b=(g(be,be) or '').strip();m=(g(me,me) or '').strip()
+  if b:return safe_provider_url(b),(g(ke,ke) or ''),(pending or m)
+  pending=pending or m
  return None,'',''
 
 class ChatGenerator:
@@ -118,7 +120,17 @@ class ChatGenerator:
  def base_url(self):return self._cfg()[0]
  @property
  def endpoint_id(self):return hashlib.sha256((self.base_url or '').encode()).hexdigest()[:12]
- async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+ @property
+ def is_local(self):
+  """True for a model served from this machine or LAN (Ollama etc.): slower and smaller, so callers shrink its prompt."""
+  from urllib.parse import urlparse
+  h=(urlparse(self.base_url or '').hostname or '').lower()
+  if h in ('localhost','host.docker.internal') or h.endswith('.local'):return True
+  try:
+   import ipaddress;ip=ipaddress.ip_address(h);return ip.is_loopback or ip.is_private
+  except ValueError:return False
+ async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,retry=True):
+  """retry=False: fail on the first timeout/5xx instead of retrying the same endpoint (callers with a failover model switch at once)."""
   g=self.setting;base,key,model=self._cfg()
   if not base or not model:return ''
   total=total_s or float(g(self.total_s_env,self.total_s_env) or self.default_total_s)
@@ -127,7 +139,7 @@ class ChatGenerator:
   try:body.update(json.loads(g(self.extra_body_env,self.extra_body_env) or '{}'))
   except (ValueError,TypeError):pass
   hdr={'Authorization':f'Bearer {key}'} if key else {};last=None
-  for attempt in (0,1):
+  for attempt in ((0,1) if retry else (0,)):
    left=end-time.monotonic()
    if left<=0.5:break
    try:r=await send(_ov_client(),'POST',base+'/chat/completions',min(left,first) if attempt==0 else left,headers=hdr,json=body)

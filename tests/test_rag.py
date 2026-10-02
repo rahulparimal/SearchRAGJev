@@ -17,6 +17,7 @@ import app as A
 
 def fresh():
     Base.metadata.drop_all(engine);Base.metadata.create_all(engine)
+    import config_store;config_store.invalidate()  # the settings snapshot is cached per process; a dropped DB must not leak saved settings into the next test
 def add_doc(db,did,chunks,status='ready',acl='*',filename=None,owner='system'):
     db.add(Doc(id=did,title=did,filename=filename or did+'.txt',checksum=did,owner=owner,acl=acl,snapshot_path='',status=status))
     db.flush()

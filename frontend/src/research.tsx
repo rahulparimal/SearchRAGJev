@@ -6,12 +6,12 @@ export type Block={t:'h2'|'h3';text:string}|{t:'p';runs:Run[]}|{t:'ul';items:Run
 export type Citation={n:number;title:string;url:string|null;domain:string|null;source:string};
 export type Gap={id:string;question:string;reason:string};
 export type Verification={status:'verified'|'partial'|'unavailable'|'skipped';checked:number;supported:number;flagged:number;unchecked:number};
-export type Report={cached?:boolean;title:string|null;blocks:Block[];citations:Citation[];gaps:Gap[];verification:Verification;markdown:string;model:string;elapsed_ms:number;stats:any};
+export type Report={mode?:'synthesised'|'extractive';fallback_reason?:string;warnings?:string[];cached?:boolean;title:string|null;blocks:Block[];citations:Citation[];gaps:Gap[];verification:Verification;markdown:string;model:string|null;elapsed_ms:number;stats:any};
 export type SubqStatus={id:string;question:string;state:'pending'|'searching'|'done'|'failed';sources:{title:string;domain:string;url:string}[];reason?:string};
 export type PartialSource={n:number;title:string;url:string|null;domain:string|null;source:string};
 export type ResearchState={
- status:'idle'|'planning'|'searching'|'reading'|'writing'|'verifying'|'done'|'error';
- title?:string|null;subqs:SubqStatus[];report?:Report;error?:string;elapsedMs?:number;
+ status:'idle'|'planning'|'searching'|'reflecting'|'reading'|'writing'|'repairing'|'verifying'|'done'|'error';
+ title?:string|null;subqs:SubqStatus[];report?:Report;error?:string;errorMessage?:string;partialReport?:Report;elapsedMs?:number;
  partialSources?:PartialSource[];partialGaps?:Gap[];  // set on error when SOME sources were gathered before the failure; never fed to ReportView (that expects a full validated report)
 };
 export function PartialSources({sources,gaps}:{sources:PartialSource[];gaps:Gap[]}){
@@ -29,12 +29,14 @@ const ERR_COPY:{[k:string]:string}={
  provider_unavailable:'The research model did not respond. Try again.',
  unsupported_claim:'The draft report did not cite its sources well enough to show; try again or rephrase the question.',
  timeout:'Deep Research ran out of time before finishing.',
+ stopped:'Stopped. No report was kept because nothing had been collected yet.',
+ session_expired:'Your session expired. Sign in again.',
 };
-export function researchErrorText(reason?:string){return (reason&&ERR_COPY[reason])||'Deep Research could not complete.'}
+export function researchErrorText(reason?:string,message?:string){return (reason&&ERR_COPY[reason])||message||'Deep Research could not complete.'}
 
 export async function streamResearch(apiBase:string,token:string,query:string,includeKb:boolean,onEvent:(name:string,data:any)=>void,signal:AbortSignal,refresh=false){
  let r=await fetch(apiBase+'/research',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({query,web_consent:true,include_kb:includeKb,refresh}),signal});
- if(!r.ok||!r.body){let j:any={};try{j=await r.json()}catch{}  ;onEvent('error',{reason:j.detail||`http_${r.status}`});return}
+ if(!r.ok||!r.body){let j:any={};try{j=await r.json()}catch{}  ;const m=typeof j.detail==='string'?j.detail:undefined;onEvent('error',{reason:r.status===429?'rate_limited':r.status===401?'session_expired':'http_error',message:m||`The server refused the request (HTTP ${r.status}).`});return}
  let rd=r.body.getReader(),dec=new TextDecoder(),buf='';
  for(;;){
   let{done,value}=await rd.read();if(done)break;
@@ -59,6 +61,8 @@ export function ReportView({report,onCopy,onRefresh}:{report:Report;onCopy:()=>v
  if(!report||!report.blocks)return null;
  const webCount=report.citations.filter(c=>c.source!=='local').length,pagesRead=report.stats?.pages_fetched||0;  // defensive: only a genuine 'report' SSE event should ever reach this component
  return <div className="research-report">
+  {report.mode==='extractive'&&<div className="research-banner" role="status"><b>Evidence only.</b> {report.fallback_reason==='partial'?'The run was stopped before the report was written, so this shows what had been collected.':report.fallback_reason==='few_cited_claims'?'The model\'s draft had too few statements backed by citations to show, so this lists the passages found instead.':'The writing model did not finish in time, so this lists the most relevant passages found instead.'} Nothing here is synthesised; check each passage against its source.</div>}
+  {(report.warnings||[]).map((w,i)=><div className="research-banner warn" key={i}>{w}</div>)}
   {report.title&&<h2 className="research-title">{report.title}</h2>}
   {report.blocks.map((b,i)=>{
    if(b.t==='h2')return <h3 key={i}>{b.text}</h3>;
@@ -85,7 +89,7 @@ export function ReportView({report,onCopy,onRefresh}:{report:Report;onCopy:()=>v
  </div>;
 }
 export function ResearchProgress({state,onStop}:{state:ResearchState;onStop:()=>void}){
- const label:{[k:string]:string}={planning:'Planning research…',searching:'Searching the web…',reading:'Reading your documents…',writing:'Writing the report…',verifying:'Verifying citations…'};
+ const label:{[k:string]:string}={planning:'Planning research…',searching:'Searching the web…',reflecting:'Looking for missing evidence…',repairing:'Fixing uncited statements…',reading:'Reading your documents…',writing:'Writing the report…',verifying:'Verifying citations…'};
  return <div className="research-progress">
   <div className="research-progress-head"><LoaderCircle className="spin" size={15}/> <span>{label[state.status]||'Working…'}</span>{state.elapsedMs!=null&&<span className="research-elapsed">{Math.round(state.elapsedMs/1000)}s</span>}<button type="button" className="research-stop" onClick={onStop}>Stop</button></div>
   {state.subqs.length>0&&<ul className="research-subqs">{state.subqs.map(sq=><li key={sq.id}>

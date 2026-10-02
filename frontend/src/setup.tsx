@@ -9,10 +9,10 @@ export const PRESETS=[
 ];
 const presetOf=(base:string)=>PRESETS.find(p=>p.base&&base.replace(/\/$/,'')===p.base)||(base?PRESETS[3]:null);
 
-type Props={api:string;headers:()=>{[k:string]:string};secrets:any;setSecrets:(f:any)=>void;config:any;onSave:()=>Promise<boolean>;onSkip?:()=>void;compact?:boolean};
+type Props={api:string;headers:()=>{[k:string]:string};secrets:any;setSecrets:(f:any)=>void;config:any;onSave:()=>Promise<{ok:boolean;message:string}>;onSkip?:()=>void;compact?:boolean};
 export function QuickSetup({api,headers,secrets,setSecrets,config,onSave,onSkip,compact}:Props){
  const[detected,setDetected]=useState<string[]>([]);const[test,setTest]=useState<{state:'idle'|'busy'|'ok'|'fail';msg?:string}>({state:'idle'});
- const[busy,setBusy]=useState(false);const[note,setNote]=useState('');
+ const[busy,setBusy]=useState(false);const[note,setNote]=useState('');const[saveMsg,setSaveMsg]=useState<{ok:boolean;text:string}|null>(null);
  const preset=presetOf(secrets.llm_base_url||'');const needsKey=preset?preset.key:true;
  const probe=async(path:string)=>{
   const r=await fetch(api+path,{method:'POST',headers:{...headers(),'Content-Type':'application/json'},body:JSON.stringify({base_url:secrets.llm_base_url,model:secrets.llm_model,api_key:secrets.llm_api_key||''})});
@@ -21,7 +21,7 @@ export function QuickSetup({api,headers,secrets,setSecrets,config,onSave,onSkip,
  async function detect(){setNote('');const j=await probe('/admin/llm/models');if(j.ok){setDetected(j.models);setNote(j.models.length?`${j.models.length} model${j.models.length===1?'':'s'} found`:'Connected, but no models are installed yet');const chat=j.models.filter((m:string)=>!/embed/i.test(m));if(!secrets.llm_model&&chat.length)setSecrets({...secrets,llm_model:chat[0]})}else setNote(`Could not list models (${j.error}). Is the server running and the URL right?`)}
  function choose(p:typeof PRESETS[number]){setSecrets({...secrets,llm_base_url:p.base,llm_model:'',llm_api_key:p.key?secrets.llm_api_key:''});setDetected([]);setTest({state:'idle'});setNote('')}
  async function runTest(){setTest({state:'busy'});const j=await probe('/admin/llm/test');setTest(j.ok?{state:'ok',msg:`Working (${j.latency_ms} ms)`}:{state:'fail',msg:`Failed: ${j.error}${j.error==='timeout'&&preset?.id==='ollama'?' - the first request loads the model; try again':''}`})}
- async function save(){setBusy(true);const ok=await onSave();setBusy(false);setNote(ok?'Saved. Quick answer, AI Overview and Deep Research now use this model.':'')}
+ async function save(){setBusy(true);const r=await onSave();setBusy(false);setNote('');setSaveMsg(r.ok?{ok:true,text:r.message==='Provider settings saved encrypted.'?'Saved. Features without their own override now use this model (see the table below for what each one really uses).':r.message}:{ok:false,text:`Not saved: ${r.message}`})}
  const suggestions=Array.from(new Set([...detected,...(preset?.models||[])]));
  return <div className={`quick-setup${compact?' compact':''}`}>
   {!compact&&<><div className="qs-head"><Server size={16}/><b>Connect your AI</b></div>
@@ -38,6 +38,7 @@ export function QuickSetup({api,headers,secrets,setSecrets,config,onSave,onSkip,
    {test.state==='ok'&&<span className="qs-ok"><CheckCircle2 size={14}/> {test.msg}</span>}{test.state==='fail'&&<span className="qs-fail"><XCircle size={14}/> {test.msg}</span>}
   </div>
   <div className="qs-actions"><button type="button" className="primary" disabled={busy||(!secrets.llm_base_url&&!secrets.typesafe_api_key)} onClick={save}><CheckCircle2 size={15}/> Save and apply</button>{onSkip&&<button type="button" className="refresh-btn" onClick={onSkip}>Skip for now</button>}</div>
+  {saveMsg&&<div className={saveMsg.ok?"qs-ok":"error"} role="status">{saveMsg.text}</div>}
  </div>;
 }
 

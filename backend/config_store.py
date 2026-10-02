@@ -14,6 +14,7 @@ def _enc(db):
         if _snap['gen']==gen and time.time()-_snap['at']<TTL:return _snap['enc']
     rows={r.key:r.encrypted_value for r in db.query(Setting).all()}
     with _lock:_snap.update(gen=gen,at=time.time(),enc=rows,plain={});return rows
+def in_db(db,key):return key in _enc(db)  # True when the value comes from an admin-saved setting rather than the environment
 def read_setting(db,key,env):
     enc=_enc(db).get(key)
     if enc is None:return os.getenv(env,'')

@@ -25,13 +25,12 @@ def _client():
  return _st['client']
 def reset():_st.update(loop=None,client=None)
 
+TIERS=(('DIRECT_LLM_BASE_URL','DIRECT_LLM_API_KEY','DIRECT_LLM_MODEL'),('OVERVIEW_LLM_BASE_URL','OVERVIEW_LLM_API_KEY','OVERVIEW_LLM_MODEL'),('LLM_BASE_URL','LLM_API_KEY','LLM_MODEL'))
 def _cfg(g):
  """Tier fallback DIRECT_LLM_* -> OVERVIEW_LLM_* -> LLM_*, each base/key/model taken together from the SAME tier so a key is never paired
  with a different provider's base URL (mirrors overview.OverviewGenerator's same-host rule)."""
- for bk,kk,mk in (('DIRECT_LLM_BASE_URL','DIRECT_LLM_API_KEY','DIRECT_LLM_MODEL'),('OVERVIEW_LLM_BASE_URL','OVERVIEW_LLM_API_KEY','OVERVIEW_LLM_MODEL'),('LLM_BASE_URL','LLM_API_KEY','LLM_MODEL')):
-  b=(g(bk,bk) or '').strip()
-  if b:return safe_provider_url(b),(g(kk,kk) or ''),(g(mk,mk) or '')
- return None,'',''
+ from providers import resolve_llm
+ return resolve_llm(g,TIERS)
 def configured(g):b,_,m=_cfg(g);return bool(b and m)
 def model_name(g):return _cfg(g)[2]
 def direct_status(g):

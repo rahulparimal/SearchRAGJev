@@ -32,10 +32,32 @@ class AdminConfigTests(unittest.TestCase):
         for body in (A.ConfigBody(web_providers='evil'),A.ConfigBody(deep_research_secondary_role='x'),A.ConfigBody(searxng_url='http://169.254.169.254/'),A.ConfigBody(deep_research2_llm_base_url='http://169.254.169.254/v1')):
             with self.assertRaises(A.HTTPException) as c:A.save_config(body,admin(),self.db)
             self.assertEqual(c.exception.status_code,422)
-    def test_changing_secondary_host_requires_retyping_its_key(self):
+    def test_changing_secondary_host_clears_its_saved_key_and_warns(self):
         A.save_config(A.ConfigBody(deep_research2_llm_base_url='http://a.example/v1',deep_research2_llm_model='m',deep_research2_llm_api_key='k'),admin(),self.db)
-        with self.assertRaises(A.HTTPException) as c:A.save_config(A.ConfigBody(deep_research2_llm_base_url='http://b.example/v1'),admin(),self.db)
-        self.assertEqual(c.exception.status_code,422)
+        out=A.save_config(A.ConfigBody(deep_research2_llm_base_url='http://b.example/v1'),admin(),self.db)
+        self.assertFalse(out['deep_research2_llm_key_configured']);self.assertTrue(any('key was cleared' in w for w in out['warnings']))
+    def test_values_are_trimmed_and_urls_stored_normalised(self):
+        out=A.save_config(A.ConfigBody(llm_base_url=' http://x.example/v1/ ',llm_model='  model-a  '),admin(),self.db)
+        self.assertEqual(out['llm_model'],'model-a');self.assertEqual(out['llm_base_url'],'http://x.example/v1')
+    def test_clear_beats_environment_and_can_empty_a_field(self):
+        with mock.patch.dict(os.environ,{'OVERVIEW_LLM_MODEL':'env-model'}):
+            self.assertEqual(A.get_config(admin(),self.db)['overview_llm_model'],'env-model')
+            out=A.save_config(A.ConfigBody(clear=['overview_llm_model']),admin(),self.db)
+            self.assertEqual(out['overview_llm_model'],'')
+    def test_clear_rejects_unknown_fields_and_set_plus_clear(self):
+        for body in (A.ConfigBody(clear=['nope']),A.ConfigBody(llm_model='x',clear=['llm_model'])):
+            with self.assertRaises(A.HTTPException) as c:A.save_config(body,admin(),self.db)
+            self.assertEqual(c.exception.status_code,422)
+    def test_model_only_override_inherits_next_tier_url_and_key(self):
+        from providers import resolve_llm
+        g={'OVERVIEW_LLM_MODEL':'gemma','LLM_BASE_URL':'http://base.example/v1','LLM_API_KEY':'k','LLM_MODEL':'big'}.get
+        b,k,m=resolve_llm(lambda a,e:g(a,''),[('DEEP_RESEARCH_LLM_BASE_URL','DEEP_RESEARCH_LLM_API_KEY','DEEP_RESEARCH_LLM_MODEL'),('OVERVIEW_LLM_BASE_URL','OVERVIEW_LLM_API_KEY','OVERVIEW_LLM_MODEL'),('LLM_BASE_URL','LLM_API_KEY','LLM_MODEL')])
+        self.assertEqual((b,k,m),('http://base.example/v1','k','gemma'))
+    def test_effective_table_names_the_tier_that_supplies_each_feature(self):
+        with mock.patch.dict(os.environ,{'LLM_BASE_URL':'http://base.example/v1','LLM_MODEL':'big','OVERVIEW_LLM_MODEL':'gemma','DIRECT_LLM_BASE_URL':'','DIRECT_LLM_MODEL':'','DEEP_RESEARCH_LLM_BASE_URL':'','DEEP_RESEARCH_LLM_MODEL':'','OVERVIEW_LLM_BASE_URL':'','DEEP_RESEARCH_2_LLM_BASE_URL':'','DEEP_RESEARCH_2_LLM_MODEL':''}):
+            e=A.effective_llms(self.db)
+        self.assertEqual(e['overview']['model'],'gemma');self.assertEqual(e['quick']['model'],'gemma');self.assertEqual(e['quick']['model_tier'],'AI Overview');self.assertEqual(e['quick']['base_tier'],'Base LLM')
+        self.assertEqual(e['research_secondary']['base'],'')
     def test_web_searcher_rebuilds_chain_when_settings_change(self):
         with mock.patch.dict(os.environ,{'BRAVE_API_KEY':'','SEARXNG_URL':'','WEB_PROVIDERS':''}):
             first=A.web_searcher();self.assertEqual([p.name for p in first.chain],['ddgs'])

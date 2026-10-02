@@ -338,8 +338,8 @@ class UrlValidation(unittest.TestCase):
         with self.assertRaises(HTTPException) as c:A.save_config(A.ConfigBody(llm_base_url='http://169.254.169.254/v1'),admin,db)
         self.assertEqual(c.exception.status_code,422)
         with mock.patch.dict(os.environ,{'TYPESAFE_API_KEY':'stored-key'}):
-            with self.assertRaises(HTTPException) as c:A.save_config(A.ConfigBody(jev_base_url='https://other.example'),admin,db)
-            self.assertEqual(c.exception.status_code,422);self.assertIn('API key again',c.exception.detail)
+            out=A.save_config(A.ConfigBody(jev_base_url='https://other.example'),admin,db)  # host change: the saved key is cleared (never sent elsewhere) and the response says so
+            self.assertTrue(any('key was cleared' in w for w in out['warnings']));self.assertFalse(out['typesafe_configured'])
         db.close()
 
 class AdminUsers(unittest.TestCase):

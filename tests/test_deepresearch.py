@@ -27,7 +27,7 @@ class FakeGen:
     def __init__(self,plan=None,report='## Summary\nAn answer [S1].',configured=True,fail_plan=False,fail_report=False):
         self._plan=plan;self._report=report;self._configured=configured;self.fail_plan=fail_plan;self.fail_report=fail_report;self.calls=[];self.model='fake-model'
     def configured(self):return self._configured
-    async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+    async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
         self.calls.append(system[:20])
         is_plan=system is DR.PLAN_SYSTEM
         if is_plan:
@@ -195,9 +195,9 @@ class DeepResearchTests(unittest.TestCase):
     def _bad(self):return "## Summary\nNo cite. Another none. A third none. Fourth none. Fifth [S1]."
     def test_repair_call_rescues_a_mostly_uncited_report_and_counts_three_llm_calls(self):
         class G(FakeGen):
-            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
                 if system is DR.REPAIR_SYSTEM:self.calls.append('repair');return '## Summary\nFixed claim [S1].'
-                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s,**kw)
         g=G(report=self._bad());ev=collect(DR.stream_research('repair q',FakeWeb(),FakeJev(),g))
         rep=dict(ev)['report'];self.assertTrue(rep['stats']['repaired']);self.assertEqual(rep['stats']['llm_calls'],3);self.assertIn('repairing',[d['stage'] for n,d in ev if n=='status'])
     def test_repair_that_is_not_better_is_discarded_and_gate_still_rejects(self):
@@ -227,11 +227,11 @@ class DeepResearchTests(unittest.TestCase):
     def test_report_llm_failure_is_retried_once(self):
         class G(FakeGen):
             n=0
-            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
                 if system is DR.REPORT_SYSTEM:
                     G.n+=1
                     if G.n==1:raise RuntimeError('503')
-                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s,**kw)
         ev=collect(DR.stream_research('retry q',FakeWeb(),FakeJev(),G()))
         self.assertEqual(dict(ev)['report']['stats']['llm_calls'],3)  # plan + failed report + good report
     def test_fallback_plan_searches_wider_than_a_normal_sub_question(self):
@@ -239,27 +239,51 @@ class DeepResearchTests(unittest.TestCase):
         self.assertEqual(len(web.calls),2);self.assertIn('fallback q overview',web.calls)
     def test_secondary_model_takes_over_when_primary_report_fails(self):
         class Primary(FakeGen):
-            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
                 if system is DR.REPORT_SYSTEM:raise RuntimeError('503')
-                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s,**kw)
         sec=FakeGen();sec.model='fast-model'
         ev=collect(DR.stream_research('failover q',FakeWeb(),FakeJev(),Primary(),gen2=sec))
         rep=dict(ev)['report'];self.assertTrue(rep['stats']['failover']);self.assertEqual(rep['model'],'fast-model');self.assertEqual(rep['stats']['models']['report'],'fast-model')
     def test_secondary_plans_when_role_is_planner_and_failover(self):
         plans=[]
         class Primary(FakeGen):
-            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
                 if system is DR.PLAN_SYSTEM:plans.append('primary')
-                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s,**kw)
         class Sec(FakeGen):
-            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
                 if system is DR.PLAN_SYSTEM:plans.append('secondary')
-                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s,**kw)
         sec=Sec();sec.model='fast-model'
         ev=collect(DR.stream_research('role q',FakeWeb(),FakeJev(),Primary(),gen2=sec,secondary_role='planner_and_failover'))
         self.assertEqual(plans,['secondary']);self.assertEqual(dict(ev)['report']['stats']['models']['plan'],'fast-model')
     def test_unconfigured_secondary_is_ignored(self):
         sec=FakeGen(configured=False);g=FakeGen();ev=collect(DR.stream_research('nosec q',FakeWeb(),FakeJev(),g,gen2=sec))
         self.assertEqual(sec.calls,[]);self.assertFalse(dict(ev)['report']['stats']['failover'])
+    PLAN='{"title":"T","subquestions":[{"question":"How does sharding and replication work across nodes?","queries":["sharding replication nodes"]}]}'
+    LONG=[{'title':'Result','url':'https://a.example/x','domain':'a.example','text':'Elasticsearch scales horizontally using sharding and replication across nodes. PostgreSQL full text search uses GIN indexes inside the database engine.'}]
+    def test_writer_failure_still_gives_an_evidence_only_report_not_an_error(self):
+        ev=collect(DR.stream_research('sharding replication nodes',FakeWeb(hits=self.LONG),FakeJev(),FakeGen(plan=self.PLAN,fail_report=True)))
+        rep=dict(ev)['report'];self.assertEqual(rep['mode'],'extractive');self.assertEqual(rep['fallback_reason'],'writer_failed');self.assertNotIn('error',dict(ev))
+        text=str(rep['blocks']);self.assertIn('sharding',text);self.assertIn('[S1]',text);self.assertIn('not synthesised',text)
+    def test_partial_evidence_report_is_emitted_before_the_writer_runs(self):
+        names=[n for n,_ in collect(DR.stream_research('sharding replication nodes',FakeWeb(hits=self.LONG),FakeJev(),FakeGen(plan=self.PLAN)))]
+        self.assertLess(names.index('partial'),names.index('report'))
+    def test_mostly_uncited_report_falls_back_to_evidence_when_few_claims_survive(self):
+        ev=collect(DR.stream_research('sharding replication nodes',FakeWeb(hits=self.LONG),FakeJev(),FakeGen(plan=self.PLAN,report=self._bad())))
+        rep=dict(ev)['report'];self.assertEqual(rep['mode'],'extractive');self.assertEqual(rep['fallback_reason'],'few_cited_claims')
+    def test_report_with_enough_cited_claims_is_kept_with_a_warning_even_if_some_were_dropped(self):
+        rep_md="## Summary\nA [S1]. B [S1]. C [S1]. D [S1]. Uncited one. Uncited two. Uncited three."
+        ev=collect(DR.stream_research('sharding replication nodes',FakeWeb(hits=self.LONG),FakeJev(),FakeGen(report=rep_md)))
+        rep=dict(ev)['report'];self.assertEqual(rep['mode'],'synthesised');self.assertEqual(rep['stats']['dropped_uncited'],3);self.assertTrue(any('removed' in w for w in rep['warnings']))
+    def test_primary_fails_fast_when_a_failover_model_exists(self):
+        seen=[]
+        class P(FakeGen):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
+                if system is DR.REPORT_SYSTEM:seen.append(kw.get('retry'));raise RuntimeError('503')
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s,**kw)
+        sec=FakeGen();sec.model='fast'
+        collect(DR.stream_research('failfast q',FakeWeb(),FakeJev(),P(),gen2=sec));self.assertEqual(seen,[False])
 
 if __name__=='__main__':unittest.main()
