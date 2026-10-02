@@ -2,7 +2,8 @@
 dependency is the configured LLM provider, so this path is immune to every local-pipeline slowness cause (cold embedder load, Jev pool
 contention, retrieval fan-out). It is NOT private: the query (and any client-held follow-up history) goes to the configured provider by
 default, so callers must disable this entirely when the deployment is local-KB-only (see app.local_only_enforced)."""
-import asyncio,json,logging,os,time,httpx
+import asyncio,hashlib,json,logging,os,re,time,httpx
+import tokencache as tc
 from urlcheck import safe_provider_url
 log=logging.getLogger('rag.direct')
 
@@ -11,6 +12,11 @@ FIRST_TOKEN_S=float(os.getenv('DIRECT_FIRST_TOKEN_S','8'));TOTAL_S=float(os.gete
 SYSTEM=("You are a fast, concise general-knowledge assistant. Answer directly in plain text (light markdown such as short lists is fine). "
  "You have NOT been given any of the user's private documents or search results for this question -- if the question clearly depends on "
  "private/internal information you cannot know, say so briefly and suggest the user try Search instead. Say when you are not sure.")
+
+CACHE_ENABLED=os.getenv('DIRECT_CACHE_ENABLED','false').strip().lower()=='true'  # off by default: a wrong answer would be frozen for the TTL
+# Queries whose right answer depends on time or on the asker are never cached or served from cache.
+_UNCACHEABLE=re.compile(r"\b(today|tonight|now|latest|current(ly)?|recent(ly)?|yesterday|tomorrow|this (week|month|year)|news|price|prices|weather|score|stock|my|mine|me|i|i'm|i've|we|our|us)\b|\b20\d\d\b")
+def cacheable(query,history):return CACHE_ENABLED and not history and not _UNCACHEABLE.search((query or '').casefold())
 
 _st={'loop':None,'client':None}
 def _client():
@@ -40,6 +46,11 @@ async def stream_answer(g,query,history=None):
  """Yields SSE strings: meta{model} -> token{t}* -> done{ttft_ms,total_ms} | error{reason}. Never raises."""
  t0=time.monotonic();base,key,model=_cfg(g)
  if not base or not model:yield _sse('error',{'reason':'not_configured'});return
+ ckey=None
+ if cacheable(query,history):
+  ckey=tc.make_key('answer',tc.norm_query(query),base,model,os.getenv('DIRECT_TEMPERATURE','0.3'),os.getenv('DIRECT_MAX_TOKENS','700'),os.getenv('DIRECT_EXTRA_BODY',''),hashlib.sha256(SYSTEM.encode()).hexdigest()[:12])
+  hit=await tc.get('answer',ckey)
+  if hit:yield _sse('meta',{'model':model,'cached':True});yield _sse('token',{'t':hit});yield _sse('done',{'ttft_ms':0,'total_ms':round((time.monotonic()-t0)*1000),'tokens':1,'cached':True});return
  if _active[0]>=MAX_CONCURRENT:yield _sse('error',{'reason':'busy'});return
  _active[0]+=1
  try:
@@ -77,7 +88,7 @@ async def stream_answer(g,query,history=None):
   except httpx.HTTPError as e:log.warning('direct llm connect failed reason=%s',type(e).__name__);yield _sse('error',{'reason':'provider_unavailable'});return
   if resp.status_code>=400:
    await resp.aclose();log.warning('direct llm status=%d',resp.status_code);yield _sse('error',{'reason':'provider_unavailable'});return
-  ttft=None;tokens=0;end=t0+TOTAL_S
+  ttft=None;tokens=0;end=t0+TOTAL_S;text=[]
   try:
    async for line in resp.aiter_lines():
     if time.monotonic()>end:yield _sse('error',{'reason':'timeout'});return
@@ -90,9 +101,10 @@ async def stream_answer(g,query,history=None):
     delta=((chunk.get('choices') or [{}])[0].get('delta') or {}).get('content')
     if delta:
      if ttft is None:ttft=round((time.monotonic()-t0)*1000)
-     tokens+=1;yield _sse('token',{'t':delta})
+     tokens+=1;text.append(delta);yield _sse('token',{'t':delta})
   finally:await resp.aclose()
   if tokens==0:yield _sse('error',{'reason':'provider_unavailable'});return
+  if ckey:await tc.put('answer',ckey,''.join(text),tokens=tc.est_tokens(query+SYSTEM)+tokens)
   yield _sse('done',{'ttft_ms':ttft,'total_ms':round((time.monotonic()-t0)*1000),'tokens':tokens})
  except Exception:log.exception('direct answer failed');yield _sse('error',{'reason':'provider_unavailable'})
  finally:_active[0]-=1

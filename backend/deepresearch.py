@@ -110,6 +110,20 @@ def _claim_runs(blocks):
             for item in b['items']:out.extend(item)
     return out
 
+def _table_claims(blocks):
+    """-> [(cell_run, claim_text)] for cited cells in columns 1+ of each table. A short cell ('Higher') is meaningless to a
+    grounding judge alone, so the claim text carries its row label and column header. Same dict objects as in `blocks`, so a
+    flag set on the cell shows in the rendered report."""
+    out=[]
+    for b in blocks:
+        if b['t']!='table':continue
+        for row in b['rows']:
+            for k,cell in enumerate(row):
+                if k==0 or not cell.get('cites') or not cell.get('text'):continue
+                head=b['head'][k] if k<len(b['head']) else ''
+                out.append((cell,f"{row[0]['text']} - {head}: {cell['text']}"))
+    return out
+
 async def stream_research(query,web,jev,gen,kb_search=None,include_kb=False,refresh=False):
     """web: a WebSearcher. jev: an AsyncJev (grounding is skipped when not jev.enabled). gen: a providers.ChatGenerator,
     already configured by the caller. kb_search: optional async callable(question)->[{'title','text','page',...}],
@@ -172,6 +186,7 @@ async def stream_research(query,web,jev,gen,kb_search=None,include_kb=False,refr
                     if x.get('url'):seen_url.add(x['url'])
                     all_sources.append({'subq':gp['id'],'title':x.get('title') or x.get('url') or 'source','url':x.get('url',''),'domain':x.get('domain',''),'text':x.get('text',''),'source':'web'})
                 yield _sse('subq',{'id':gp['id'],'state':'done','reason':'recovered','sources':[{'title':x.get('title'),'domain':x.get('domain'),'url':x.get('url')} for x in new_src]})
+        pages_fetched=0
         if FETCH_PAGES and all_sources:
             yield _sse('status',{'stage':'reading','elapsed_ms':ms()})
             page_budget=max(5.0,deadline-time.monotonic()-30)  # leave room for KB search, writing, verifying
@@ -179,7 +194,7 @@ async def stream_research(query,web,jev,gen,kb_search=None,include_kb=False,refr
             except Exception:log.warning('deep research page fetch failed',exc_info=True);pages={}
             for s in all_sources:
                 full=pages.get(s.get('url',''))
-                if full:s['text']=full  # full page text (already length-capped by webfetch) replaces the short provider snippet
+                if full:pages_fetched+=1;s['text']=full  # full page text (already length-capped by webfetch) replaces the short provider snippet
         if kb_search and include_kb:
             yield _sse('status',{'stage':'reading','elapsed_ms':ms()})
             for i,sq in enumerate(subqs):
@@ -211,17 +226,18 @@ async def stream_research(query,web,jev,gen,kb_search=None,include_kb=False,refr
         verification={'status':'skipped','checked':0,'supported':0,'flagged':0,'unchecked':0}
         if jev.enabled:
             yield _sse('status',{'stage':'verifying','elapsed_ms':ms()})
-            claims=_claim_runs(parsed['blocks']);to_check=claims[:GROUND_MAX]
-            srcs=[[numbered[n-1]['text'] for n in r['cites'] if 1<=n<=len(numbered)] or [''] for r in to_check]
-            scores=await ground_batch(jev,[(r['text'],s) for r,s in zip(to_check,srcs)],deadline_ms=3000,query=query)
-            for r,sc in zip(to_check,scores):r['flag']='unverified' if (sc is not None and sc<GROUNDED) else None
+            items=[(r,r['text']) for r in _claim_runs(parsed['blocks'])]+_table_claims(parsed['blocks'])  # prose first so it keeps priority under GROUND_MAX
+            claims=items;to_check=items[:GROUND_MAX]
+            srcs=[[numbered[n-1]['text'] for n in r['cites'] if 1<=n<=len(numbered)] or [''] for r,_ in to_check]
+            scores=await ground_batch(jev,[(t,s) for (_,t),s in zip(to_check,srcs)],deadline_ms=3000,query=query)
+            for (r,_),sc in zip(to_check,scores):r['flag']='unverified' if (sc is not None and sc<GROUNDED) else None
             scored=[v for v in scores if v is not None]
             verification={'status':'unavailable' if to_check and not scored else ('partial' if len(claims)>len(to_check) or len(scored)<len(to_check) else 'verified'),
                           'checked':len(scored),'supported':sum(1 for v in scored if v>=GROUNDED),'flagged':sum(1 for v in scored if v<GROUNDED),'unchecked':max(0,len(claims)-len(to_check))}
 
         out={'title':plan['title'],'blocks':parsed['blocks'],'citations':_public_sources(numbered),'gaps':gaps,'verification':verification,
              'markdown':to_markdown(parsed,plan['title']),'model':gen.model,'elapsed_ms':ms(),
-             'stats':{'web_queries':sum(len(sq['queries']) for sq in subqs),'sources':len(numbered),'llm_calls':2,'claims_checked':verification['checked']}}
+             'stats':{'web_queries':sum(len(sq['queries']) for sq in subqs),'sources':len(numbered),'llm_calls':2,'claims_checked':verification['checked'],'pages_fetched':pages_fetched}}
         if rkey and verification['status']!='unavailable':await tc.put('report',rkey,out,tokens=tc.est_tokens(REPORT_SYSTEM+user_msg)+REPORT_MAX_TOKENS)
         yield _sse('report',out)
         yield _sse('done',{'elapsed_ms':ms()})

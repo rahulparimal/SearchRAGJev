@@ -63,11 +63,10 @@ leader. If the leader fails, followers compute for themselves (a failure is neve
   (`WEB_CACHE_TTL_S`), embeddings/query caches in the search path.
 
 **Target (not built).**
-- Quick answer cache for history-free, query-only turns (`answer` namespace is reserved; needs a safety review: personalised or
-  time-sensitive prompts must bypass it).
+- (Built, opt-in) Quick answer cache: `DIRECT_CACHE_ENABLED=true`; history-free queries only; time-sensitive/personal wording bypasses; key includes model, base, temperature, max tokens, extra body and system-prompt hash; stored only after a successful stream.
 - Semantic (embedding-similarity) lookup so paraphrases hit: use the existing embedder, store query vectors, accept only above a
   high threshold (>= 0.92) and only for `plan`/`route`, never for reports.
-- Corpus-generation keys for KB-derived entries (`cache.generation('corpus')`) so a re-ingest invalidates them instead of waiting for TTL.
+- Corpus-generation keys: not needed today (no cached item is document-derived); add when one is.
 - Provider prompt caching: keep the static system prompt first and byte-identical (`PLAN_SYSTEM`, `REPORT_SYSTEM` already are) so
   providers that discount cached prefixes apply it automatically. Put volatile text (query, sources) last.
 
@@ -96,5 +95,6 @@ leader. If the leader fails, followers compute for themselves (a failure is neve
 ## 6. Operating guidance
 
 - Keep `TOKENCACHE_ENABLED=true`; clear a namespace by bumping its key version (`tc:v1` -> `tc:v2`) in `make_key`.
-- A user who needs fresh research should be offered a "refresh" control (bypass cache) -- **Target**; today wait out the 30 min TTL or restart Redis.
+- Cached reports show a Refresh button (bypasses the cached read, still stores the new result, and counts toward the hourly quota).
+- A/B the planner skip with `scripts/research_eval.py --arm/--out` and `TOKENCACHE_ENABLED=false`; no result has been measured yet.
 - Never put a user name in a key for shared material (reduces hit rate) and never omit it for ACL-dependent material (leaks data).

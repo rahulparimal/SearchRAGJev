@@ -51,14 +51,23 @@ Done and tested: planner/search/report/validate/verify pipeline; admin tab; full
 gap-driven reflection retry; markdown download; cache `refresh` flag (API; no UI control yet); `/health` fields (`research_active`,
 `token_cache`); route-table smoke tests (`tests/test_routes.py`); structural eval runner (`scripts/research_eval.py`).
 
-NOT done (deliberately deferred, not forgotten):
-- Detached/resumable runs (`run_id` + event replay): a closed tab loses an in-flight run (the quota slot is already spent).
-- Map-reduce summaries when full-page text exceeds the context budget (pages are truncated to `DEEP_RESEARCH_PAGE_TEXT_CHARS` instead).
-- Streamed draft labelled unverified; PDF export (markdown download only).
-- Quick-answer cache and semantic (embedding) cache lookup; corpus-generation keys for KB-derived cache entries; a UI "refresh" button.
-- Thresholds unmeasured: `DEEP_RESEARCH_ROUTE_SIMPLE_BELOW=0.25` has no A/B against report quality yet; token savings are chars/4 estimates.
-- The research eval checks structure only; factual quality needs manual rubric review.
+Added after Opus feasibility review: Jev verification of table cells (with row/column context, after prose under `GROUND_MAX`); honest report
+footer (`stats.pages_fetched`: snippets vs full pages); UI Refresh button (shown only on cached reports; costs a run of quota);
+print / save-as-PDF (browser print stylesheet, no server work); opt-in Quick-answer cache (`DIRECT_CACHE_ENABLED`, history-free,
+time-sensitive/personal queries bypass; first tests for `direct.py`); A/B instrumentation in `scripts/research_eval.py` (`--arm/--out`).
+
+NOT done, with Opus's reasoning:
+- Detached/resumable runs: DEFERRED. Needs sealed owner-scoped Redis event streams (events can hold KB text), a detached task lifecycle that
+  survives disconnects but not restarts, and orphan cleanup. Needs its own design session.
+- Map-reduce summaries: DEFERRED. Page text is capped at `DEEP_RESEARCH_PAGE_TEXT_CHARS`; map-reduce adds up to ~10 LLM calls with no quality evidence.
+- Streamed unverified draft: DROPPED. It would show uncited or injected text before `parse_report` and the drop-rate gate, defeating validation.
+- Semantic cache lookup: DEFERRED (needs the embedder in the request path, threshold unmeasured, a plan call is only ~500 tokens).
+- Corpus-generation cache keys: DROPPED until a cache holds document-derived material (KB-derived reports are not cached at all).
+- Planner-skip threshold (0.25): instrumentation exists but NO A/B has been run; the web is nondeterministic so results would be proxies.
+  Run each arm with `TOKENCACHE_ENABLED=false` (the plan cache otherwise bypasses routing for repeated questions).
+- The research eval checks structure only; factual quality needs manual rubric review. Table-cell verification depends on Jev judging short cells.
 - Page fetch has a residual DNS-rebinding window (documented in webfetch.py).
+- The Quick-answer cache is untested against a real provider and off by default.
 
 ## Cleanup needed (unchanged from the original QA)
 Test users: qa-r1, qa-r2, qa-reader1, qa-reader2, rv_reader, evalr-* (no delete endpoint). Test document "QA Restricted Bonus Matrix". Rotate the TypeSafe and LLM keys, Postgres password and APP_SECRET_KEY (they were in an old working-tree `.env.example`; `.env.bak` holds copies).

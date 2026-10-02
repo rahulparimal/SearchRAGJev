@@ -118,7 +118,7 @@ POST /research (SSE)
  5. kb:     optional ACL-checked local search per sub-question (include_kb)
  6. write:  ONE LLM call over nonce-delimited numbered sources, restricted-markdown contract
  7. validate: research_report.parse_report - drop uncited claims, reject report if drop rate > DROP_RATE_MAX
- 8. verify: Jev ground_batch over up to GROUND_MAX claims (batched), flag claims below GROUNDED, status verified|partial|unavailable|skipped
+ 8. verify: Jev ground_batch over up to GROUND_MAX claims (prose first, then cited table cells with row/column context; batched), flag claims below GROUNDED, status verified|partial|unavailable|skipped
  9. emit:   report event (blocks, citations, gaps, verification, markdown, stats), then done; seal into cache if healthy
 ```
 
@@ -171,11 +171,11 @@ runs against real providers. Quality: `docs/eval/deep_research.jsonl` (8 questio
 an automated runner is Target**. Known gap: unit tests call functions directly and bypass FastAPI routing; a decorator misplacement
 once broke `/auth/me` unseen - keep ASGI-level route smoke tests.
 
-### 8.9 Roadmap (**Target**)
+### 8.9 Roadmap and decisions
 
-Detached/resumable runs (`run_id` + event replay), map-reduce summaries when page text exceeds the context budget, streamed
-draft labelled unverified, PDF export (markdown download exists), cache "refresh" control, semantic plan-cache lookup, automated
-rubric runner with LLM-free checks (table present, per-row citation, domain diversity) plus human review.
+Built after review: table-cell verification, honest footer, Refresh, print/save as PDF (browser print stylesheet), Quick-answer cache (opt-in),
+eval A/B instrumentation. Deferred: detached/resumable runs (owner-scoped sealed event streams; needs a design), map-reduce summaries,
+semantic cache lookup, automated quality scoring. Dropped: streaming an unverified draft (it would bypass citation validation).
 
 ## 9. Operations
 

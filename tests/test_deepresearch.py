@@ -169,5 +169,25 @@ class DeepResearchTests(unittest.TestCase):
         collect(DR.stream_research('refresh me',FakeWeb(),FakeJev(),FakeGen()))
         g=FakeGen();collect(DR.stream_research('refresh me',FakeWeb(),FakeJev(),g,refresh=True))
         self.assertTrue(g.calls)
+    def test_table_cells_are_verified_with_row_and_column_context(self):
+        report="## Compare\n| Item | Cost |\n|---|---|\n| Alpha | High [S1] |\n| Beta | Low [S1] |\n"
+        seen=[]
+        class J(FakeJev):
+            async def decide(self,state,questions,timeout_ms=None):
+                seen.append(state);return {k:{'noul':0.1} for k in questions}
+        ev=collect(DR.stream_research('table q',FakeWeb(),J(),FakeGen(report=report)))
+        rep=dict(ev)['report'];cell=[b for b in rep['blocks'] if b['t']=='table'][0]['rows'][0][1]
+        self.assertEqual(cell['flag'],'unverified');self.assertEqual(rep['verification']['flagged'],2)
+        self.assertIn('Alpha - Cost: High',str(seen))
+    def test_prose_keeps_priority_over_table_cells_under_the_cap(self):
+        report="## S\nProse one [S1]. Prose two [S1].\n\n| Item | Cost |\n|---|---|\n| A | x [S1] |\n| B | y [S1] |\n"
+        with mock.patch.object(DR,'GROUND_MAX',2):
+            ev=collect(DR.stream_research('cap q',FakeWeb(),FakeJev(),FakeGen(report=report)))
+        v=dict(ev)['report']['verification'];self.assertEqual(v['checked'],2);self.assertEqual(v['unchecked'],2);self.assertEqual(v['status'],'partial')
+    def test_pages_fetched_stat_counts_replaced_snippets(self):
+        async def fp(urls,deadline):return {u:'FULL' for u in urls}
+        with mock.patch.object(DR,'FETCH_PAGES',True),mock.patch.object(DR.webfetch,'fetch_pages',side_effect=fp):
+            ev=collect(DR.stream_research('pages q',FakeWeb(),FakeJev(),FakeGen()))
+        self.assertGreaterEqual(dict(ev)['report']['stats']['pages_fetched'],1)
 
 if __name__=='__main__':unittest.main()

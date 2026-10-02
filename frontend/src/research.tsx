@@ -32,8 +32,8 @@ const ERR_COPY:{[k:string]:string}={
 };
 export function researchErrorText(reason?:string){return (reason&&ERR_COPY[reason])||'Deep Research could not complete.'}
 
-export async function streamResearch(apiBase:string,token:string,query:string,includeKb:boolean,onEvent:(name:string,data:any)=>void,signal:AbortSignal){
- let r=await fetch(apiBase+'/research',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({query,web_consent:true,include_kb:includeKb}),signal});
+export async function streamResearch(apiBase:string,token:string,query:string,includeKb:boolean,onEvent:(name:string,data:any)=>void,signal:AbortSignal,refresh=false){
+ let r=await fetch(apiBase+'/research',{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({query,web_consent:true,include_kb:includeKb,refresh}),signal});
  if(!r.ok||!r.body){let j:any={};try{j=await r.json()}catch{}  ;onEvent('error',{reason:j.detail||`http_${r.status}`});return}
  let rd=r.body.getReader(),dec=new TextDecoder(),buf='';
  for(;;){
@@ -55,8 +55,9 @@ function Cites({cites}:{cites:number[]}){
 function RunText({runs}:{runs:Run[]}){
  return <>{runs.map((r,i)=><Fragment key={i}>{i>0?' ':''}<span className={r.flag?'claim-flagged':''} title={r.flag?'Not independently verified against its cited source':undefined}>{r.text}</span><Cites cites={r.cites}/></Fragment>)}</>;
 }
-export function ReportView({report,onCopy}:{report:Report;onCopy:()=>void}){
- if(!report||!report.blocks)return null;  // defensive: only a genuine 'report' SSE event should ever reach this component
+export function ReportView({report,onCopy,onRefresh}:{report:Report;onCopy:()=>void;onRefresh?:()=>void}){
+ if(!report||!report.blocks)return null;
+ const webCount=report.citations.filter(c=>c.source!=='local').length,pagesRead=report.stats?.pages_fetched||0;  // defensive: only a genuine 'report' SSE event should ever reach this component
  return <div className="research-report">
   {report.title&&<h2 className="research-title">{report.title}</h2>}
   {report.blocks.map((b,i)=>{
@@ -70,12 +71,14 @@ export function ReportView({report,onCopy}:{report:Report;onCopy:()=>void}){
   {report.gaps.length>0&&<div className="research-gaps"><b>Coverage gaps</b><ul>{report.gaps.map(g=><li key={g.id}>{g.question}</li>)}</ul></div>}
   <div className="research-sources"><b>Sources</b><ol>{report.citations.map(c=><li id={`rs-S${c.n}`} key={c.n}>{c.url?<a href={c.url} target="_blank" rel="noreferrer noopener">{c.title}</a>:<span>{c.title}{c.source==='local'?' (your documents)':''}</span>}{c.domain?<span className="cite-domain"> · {c.domain}</span>:''}</li>)}</ol></div>
   <div className="research-footer">
-   Built from {report.citations.filter(c=>c.source!=='local').length} web source{report.citations.length===1?'':'s'} (snippets, not full pages)
-   {report.verification.status==='verified'&&` · ${report.verification.supported} of ${report.verification.checked} statements verified against cited snippets`}
+   Built from {webCount} web source{webCount===1?'':'s'} ({pagesRead>0?`${pagesRead} read as full pages, the rest as snippets`:'snippets, not full pages'})
+   {report.verification.status==='verified'&&` · ${report.verification.supported} of ${report.verification.checked} statements verified against the cited source text`}
    {report.verification.status==='partial'&&` · ${report.verification.supported} of ${report.verification.checked} checked statements verified (some claims were not checked)`}
    {report.verification.status==='unavailable'&&' · citation verification was unavailable for this run'}
    {' · '}{(report.elapsed_ms/1000).toFixed(0)}s
    {report.cached&&' · served from cache'}
+   {report.cached&&onRefresh&&<button type="button" className="research-copy" title="Runs the research again (counts toward your hourly limit)" onClick={onRefresh}>Refresh</button>}
+   <button type="button" className="research-copy" onClick={()=>window.print()}>Print / save as PDF</button>
    <button type="button" className="research-copy" onClick={onCopy}><Copy size={12}/> Copy markdown</button>
    <button type="button" className="research-copy" onClick={()=>{const u=URL.createObjectURL(new Blob([report.markdown],{type:'text/markdown'}));const a=document.createElement('a');a.href=u;a.download=`${(report.title||'research-report').replace(/[^\w-]+/g,'-').slice(0,60)}.md`;a.click();URL.revokeObjectURL(u)}}>Download .md</button>
   </div>

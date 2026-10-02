@@ -34,3 +34,12 @@
 .research-footer{margin-top:14px;padding-top:12px;border-top:1px solid #2b403e;color:#7ea999;font-size:9px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}.research-copy{margin-left:auto;border:1px solid #2b403e;background:transparent;color:#8fe3c0;border-radius:6px;padding:5px 9px;font-size:9px;display:inline-flex;align-items:center;gap:5px}
 .research-pill{background:#17202e;border-color:#2e3f54;color:#9db3c7}
 .research-partial{border:1px solid #29384a;border-radius:9px;background:#111d2c;padding:14px 16px;margin-top:10px}.research-partial ul{margin:8px 0;padding-left:18px;font-size:11px;color:#9fb4c4;line-height:1.8}.research-partial a{color:#7edcbd;text-decoration:none}.research-partial a:hover{color:#b3ffe9}
+
+@media print{
+  body *{visibility:hidden}
+  .research-report,.research-report *{visibility:visible}
+  .research-report{position:absolute;left:0;top:0;width:100%;color:#000;background:#fff}
+  .research-copy,.research-footer button{display:none!important}
+  .research-sources a::after{content:" (" attr(href) ")";font-size:.85em}
+  .research-table{border-collapse:collapse}.research-table th,.research-table td{border:1px solid #999;color:#000}
+}

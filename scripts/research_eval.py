@@ -4,6 +4,9 @@
 adversarial prompt not leaked, verification status). It does NOT judge factual quality: read the printed markdown against each
 rubric before trusting a pass. Costs real LLM/web calls; use --limit. Bypasses the report cache (refresh=true).
 
+A/B of the planner-skip threshold: restart the API for each arm with TOKENCACHE_ENABLED=false and DEEP_RESEARCH_ROUTE_SIMPLE_BELOW=0 (arm route0)
+then 0.25 (arm route025), run with --arm/--out for each, and compare the JSONL. The web is nondeterministic, so these are proxies, not quality.
+
 Usage (API running, Deep Research enabled): set -a; . ./.env; set +a; python scripts/research_eval.py --limit 3
 """
 import argparse,json,os,sys,time,urllib.request
@@ -44,19 +47,22 @@ def check(case,events):
 
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('--dataset',default=str(ROOT/'docs/eval/deep_research.jsonl'));ap.add_argument('--limit',type=int,default=0)
-    ap.add_argument('--base',default=f"http://localhost:{os.getenv('API_PORT','8000')}");ap.add_argument('--show',action='store_true',help='print each report markdown')
+    ap.add_argument('--base',default=f"http://localhost:{os.getenv('API_PORT','8000')}");ap.add_argument('--arm',default='',help='label for an A/B arm, e.g. route0 or route025');ap.add_argument('--out',default='',help='append one JSON line per case here');ap.add_argument('--show',action='store_true',help='print each report markdown')
     a=ap.parse_args();pw=os.getenv('ADMIN_PASSWORD')
     if not pw:sys.exit('ADMIN_PASSWORD not set (set -a; . ./.env; set +a)')
     tok=login(a.base,os.getenv('ADMIN_USERNAME','admin'),pw)
     cases=[json.loads(l) for l in open(a.dataset) if l.strip()][:a.limit or None];bad=0
     for c in cases:
         t0=time.time()
-        try:problems,rep=check(c,run(a.base,tok,c['query']))
+        ev=None
+        try:ev=run(a.base,tok,c['query']);problems,rep=check(c,ev)
         except Exception as e:problems,rep=[f'request failed: {type(e).__name__}: {e}'],None
         hard=[p for p in problems if 'not a failure' not in p];bad+=bool(hard)
         v=rep['verification'] if rep else {};st=rep['stats'] if rep else {}
         print(f"{'PASS' if not hard else 'FAIL'} {c['id']} {c['kind']} {time.time()-t0:.0f}s sources={st.get('sources')} verif={v.get('status')} {v.get('supported')}/{v.get('checked')} {problems or ''}")
         print(f"     rubric (check manually): {c['rubric']}")
+        if a.out:
+            with open(a.out,'a') as f:f.write(json.dumps({'arm':a.arm,'id':c['id'],'kind':c['kind'],'ok':not hard,'seconds':round(time.time()-t0,1),'routed':(dict(ev).get('plan') or {}).get('routed') if ev else None,'llm_calls':st.get('llm_calls'),'sources':st.get('sources'),'domains':len({x['domain'] for x in rep['citations'] if x.get('domain')}) if rep else None,'verif':v.get('status'),'supported':v.get('supported'),'checked':v.get('checked'),'problems':problems})+'\n')
         if a.show and rep:print(rep['markdown'],'\n')
     print(f'\n{len(cases)-bad}/{len(cases)} structurally clean. Structure is not factual quality: review the rubric by hand.')
     sys.exit(1 if bad else 0)
