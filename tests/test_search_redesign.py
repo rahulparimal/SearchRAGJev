@@ -80,10 +80,10 @@ class TimingsAndOverviewDefaults(unittest.TestCase):
     def test_no_restricted_doc_for_other_user(self):
         T.add_doc(self.db,'secret',['confidential merger plan parental leave tactics for the executive team, covering timing, staffing, announcements and the sixteen week paid leave exception for new parents'],acl='bob')
         with mock.patch.object(A,'jev_client',return_value=FakeJev(enabled=False)):
-            r=aio(A.search(A.SearchBody(query='how does the merger plan treat parental leave',overview=True),T.Response(),reader('alice'),self.db))
+            r=aio(A.search(A.SearchBody(query='how does the merger plan treat parental leave',overview=True,low_confidence=True),T.Response(),reader('alice'),self.db))
             self.assertNotIn('secret',{x['document_id'] for x in r['results']})
             rec=OV.load_evidence(r['search_id'],'alice');self.assertNotIn('secret',{e['document_id'] for e in rec['evidence']})
-            r2=aio(A.search(A.SearchBody(query='how does the merger plan treat parental leave'),T.Response(),reader('bob'),self.db));self.assertIn('secret',{x['document_id'] for x in r2['results']})
+            r2=aio(A.search(A.SearchBody(query='how does the merger plan treat parental leave',low_confidence=True),T.Response(),reader('bob'),self.db));self.assertIn('secret',{x['document_id'] for x in r2['results']})
 
 class LocalOnlyToggle(unittest.TestCase):
     def setUp(self):

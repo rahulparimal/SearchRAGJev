@@ -1,7 +1,76 @@
-{"id": "f001", "mode": "local", "type": "semantic_no_overlap", "query": "can I plug in a thumb drive", "relevant": {"it_usb_policy.md": 3}, "forbidden": [], "overview_expected": false, "note": "no shared content term with the policy; dense ranks it first"}
-{"id": "f002", "mode": "local", "type": "semantic_no_overlap", "query": "is it fine to connect a flash stick to my work laptop", "relevant": {"it_usb_policy.md": 3}, "forbidden": [], "overview_expected": false}
-{"id": "f003", "mode": "local", "type": "stopword_trap", "query": "how can i connect to the vpn", "relevant": {"it_vpn_setup.md": 3, "it_vpn_troubleshooting.md": 1}, "forbidden": [], "overview_expected": false, "note": "stop words (how/can/i/to/the) must not decide the lexical ranking"}
-{"id": "n001", "mode": "local", "type": "no_results", "query": "kubernetes autoscaling", "expect_empty": true, "forbidden": [], "overview_expected": false, "note": "no related document: must return an empty list, not 5 unrelated ones"}
-{"id": "n002", "mode": "local", "type": "no_results", "query": "best pizza toppings in rome", "expect_empty": true, "forbidden": [], "overview_expected": false}
-{"id": "n003", "mode": "local", "type": "no_results", "query": "quantum computing basics", "expect_empty": true, "forbidden": [], "overview_expected": false}
-{"id": "n004", "mode": "local", "type": "no_results", "query": "recipe for banana bread", "expect_empty": true, "forbidden": [], "overview_expected": false}
+{"id": "in-co1", "kind": "in", "query": "how many weeks of parental leave do we get", "title_contains": "parental_leave"}
+{"id": "in-co2", "kind": "in", "query": "how do I reset my password", "title_contains": "password_reset"}
+{"id": "in-co3", "kind": "in", "query": "what is the process for requesting new software", "title_contains": "software_request"}
+{"id": "in-co4", "kind": "in", "query": "how do I enroll in multi-factor authentication", "title_contains": "mfa_enrollment"}
+{"id": "in-co5", "kind": "in", "query": "can I use a thumb drive on a company laptop", "title_contains": "usb_policy"}
+{"id": "in-co6", "kind": "in", "query": "how does the vpn reconnect", "title_contains": "vpn"}
+{"id": "in-co7", "kind": "in", "query": "guest wifi access for visitors", "title_contains": "guest_wifi"}
+{"id": "in-co8", "kind": "in", "query": "how long are emails retained", "title_contains": "email_retention"}
+{"id": "in-co9", "kind": "in", "query": "how many vacation days do I get per year", "title_contains": "annual_leave"}
+{"id": "in-co10", "kind": "in", "query": "bereavement leave for a family member", "title_contains": "bereavement"}
+{"id": "in-co11", "kind": "in", "query": "how do I submit an expense report", "title_contains": "expense_reimbursement"}
+{"id": "in-co12", "kind": "in", "query": "mileage reimbursement rate", "title_contains": "mileage"}
+{"id": "in-co13", "kind": "in", "query": "invoice approval workflow", "title_contains": "invoice_approval"}
+{"id": "in-co14", "kind": "in", "query": "corporate card rules", "title_contains": "corporate_card"}
+{"id": "in-co15", "kind": "in", "query": "travel booking policy", "title_contains": "travel_booking"}
+{"id": "in-co16", "kind": "in", "query": "procurement approval threshold", "title_contains": "procurement"}
+{"id": "in-co17", "kind": "in", "query": "how are feature flags managed", "title_contains": "feature_flags"}
+{"id": "in-co18", "kind": "in", "query": "deploy process steps", "title_contains": "deploy_process"}
+{"id": "in-co19", "kind": "in", "query": "on call rotation schedule", "title_contains": "oncall"}
+{"id": "in-co20", "kind": "in", "query": "code review requirements", "title_contains": "code_review"}
+{"id": "in-co21", "kind": "in", "query": "database migration guidelines", "title_contains": "database_migrations"}
+{"id": "in-co22", "kind": "in", "query": "how should api versions be handled", "title_contains": "api_versioning"}
+{"id": "in-co23", "kind": "in", "query": "incident postmortem template", "title_contains": "postmortem"}
+{"id": "in-co24", "kind": "in", "query": "git branching strategy", "title_contains": "branching"}
+{"id": "in-co25", "kind": "in", "query": "performance review cycle", "title_contains": "performance_review"}
+{"id": "in-co26", "kind": "in", "query": "remote work policy", "title_contains": "remote_work"}
+{"id": "in-co27", "kind": "in", "query": "how do I report sick leave", "title_contains": "sick_leave"}
+{"id": "in-co28", "kind": "in", "query": "code of conduct reporting", "title_contains": "code_of_conduct"}
+{"id": "in-gi1", "kind": "in", "query": "what does Krishna teach Arjuna about the eternal soul", "title_contains": "Gita"}
+{"id": "in-gi2", "kind": "in", "query": "karma yoga acting without attachment to the fruits of work", "title_contains": "Gita"}
+{"id": "in-gi3", "kind": "in", "query": "Arjuna refuses to fight on the battlefield of Kurukshetra", "title_contains": "Gita"}
+{"id": "in-gi4", "kind": "in", "query": "the three modes of material nature goodness passion and ignorance", "title_contains": "Gita"}
+{"id": "in-gi5", "kind": "in", "query": "devotional service to the Supreme Lord", "title_contains": "Gita"}
+{"id": "in-gi6", "kind": "in", "query": "what happens at the time of death according to Krishna", "title_contains": "Gita"}
+{"id": "in-sp1", "kind": "in", "query": "Why is Siva worshipped both in an image and in the phallic linga form?", "title_contains": "Siva", "pages": [55, 59]}
+{"id": "in-sp2", "kind": "in", "query": "Brahma as a swan and Vishnu as a boar search for the top and bottom of the fiery column of light", "title_contains": "Siva", "pages": [59, 63]}
+{"id": "in-sp3", "kind": "in", "query": "What did the Ketaki flower say to Brahma?", "title_contains": "Siva", "pages": [61, 66]}
+{"id": "in-sp4", "kind": "in", "query": "What exists at the time of the Great Dissolution of the universe?", "title_contains": "Siva", "pages": [198, 204]}
+{"id": "in-sp5", "kind": "in", "query": "How does repentance purify a sinner according to the glory of the Sivapurana?", "title_contains": "Siva", "pages": [19, 23]}
+{"id": "in-sp6", "kind": "in", "query": "Visnu assumed the form of a boar to find the bottom of the column", "title_contains": "Siva", "pages": [59, 63]}
+{"id": "in-sp7", "kind": "in", "query": "the lords of the devas went to Kailasa and saw Siva in the form of Omkara", "title_contains": "Siva", "pages": [58, 62]}
+{"id": "in-sp9", "kind": "in", "query": "Why does a deity usually get only a statue but Shiva gets both a statue and the lingam too?", "title_contains": "Siva", "pages": [55, 59]}
+{"id": "in-sp10", "kind": "in", "query": "What happens to everything in existence when the world finally comes to an end?", "title_contains": "Siva", "pages": [198, 204]}
+{"id": "in-sp11", "kind": "in", "query": "Can feeling truly sorry for wrongdoing wash away a person's bad karma?", "title_contains": "Siva", "pages": [19, 23]}
+{"id": "in-sp12", "kind": "in", "query": "A flower told a lie and got cursed for it by a god", "title_contains": "Siva", "pages": [61, 66]}
+{"id": "in-sp13", "kind": "in", "query": "two gods turned into animals to race along a pillar of fire to find its ends", "title_contains": "Siva", "pages": [59, 63]}
+{"id": "out1", "kind": "out", "query": "recipe for banana bread"}
+{"id": "out2", "kind": "out", "query": "kubernetes pod restart policy"}
+{"id": "out3", "kind": "out", "query": "best laptop for programming 2026"}
+{"id": "out4", "kind": "out", "query": "stock market crash causes"}
+{"id": "out5", "kind": "out", "query": "what is the capital of australia"}
+{"id": "out6", "kind": "out", "query": "how to change a car tire"}
+{"id": "out7", "kind": "out", "query": "symptoms of the flu"}
+{"id": "out8", "kind": "out", "query": "python list comprehension syntax"}
+{"id": "out9", "kind": "out", "query": "weather forecast tomorrow"}
+{"id": "out10", "kind": "out", "query": "who won the world cup in 2018"}
+{"id": "out11", "kind": "out", "query": "quantum computing explained"}
+{"id": "out12", "kind": "out", "query": "how to train a puppy"}
+{"id": "out13", "kind": "out", "query": "tax filing deadline in the us"}
+{"id": "out14", "kind": "out", "query": "bitcoin price today"}
+{"id": "out15", "kind": "out", "query": "how photosynthesis works"}
+{"id": "out16", "kind": "out", "query": "history of the roman empire"}
+{"id": "out17", "kind": "out", "query": "how to learn guitar"}
+{"id": "out18", "kind": "out", "query": "javascript promise versus async await"}
+{"id": "out19", "kind": "out", "query": "cheapest flights to paris"}
+{"id": "out20", "kind": "out", "query": "how does a refrigerator work"}
+{"id": "out21", "kind": "out", "query": "nutrition facts for avocado"}
+{"id": "out22", "kind": "out", "query": "tallest mountain in the world"}
+{"id": "out23", "kind": "out", "query": "how to write a cover letter"}
+{"id": "out24", "kind": "out", "query": "symptoms of vitamin d deficiency"}
+{"id": "out25", "kind": "out", "query": "docker compose networking"}
+{"id": "out26", "kind": "out", "query": "machine learning gradient descent"}
+{"id": "out27", "kind": "out", "query": "shakespeare hamlet summary"}
+{"id": "out28", "kind": "out", "query": "how to fix a leaking faucet"}
+{"id": "out29", "kind": "out", "query": "best pizza dough recipe"}
+{"id": "out30", "kind": "out", "query": "electric car charging times"}

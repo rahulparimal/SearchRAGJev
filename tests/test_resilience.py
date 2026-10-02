@@ -248,7 +248,7 @@ class LocalRelevanceFloors(unittest.TestCase):
         A.vectors.search.return_value=hits
         with mock.patch.object(A,'jev_client',return_value=FakeJev(enabled=False)):return aio(A.search(A.SearchBody(query=q,mode='local'),T.Response(),reader(),self.db))
     def test_semantic_match_survives_content_term_bm25(self):
-        r=self.run_q('can I plug in a thumb drive',[self.H('usb-0','usb',0.37),self.H('deploy-0','deploy',0.15)])
+        r=self.run_q('can I plug in a thumb drive',[self.H('usb-0','usb',0.52),self.H('deploy-0','deploy',0.15)])
         self.assertEqual([x['document_id'] for x in r['results']],['usb'])   # no lexical overlap: dense neighbour above the floor is returned, the 0.15 one is dropped
     def test_no_relevant_results_floor(self):
         r=self.run_q('kubernetes autoscaling',[self.H('deploy-0','deploy',0.29),self.H('usb-0','usb',0.24)])

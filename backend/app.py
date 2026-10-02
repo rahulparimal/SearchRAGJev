@@ -18,7 +18,7 @@ from urllib.parse import urlparse
 from sqlalchemy.orm import Session
 from pipeline import DocumentExtractor, StructureChunker, estimate_tokens, pack_ranked_passages
 from retrieval import PostgresLexicalSearch, reciprocal_rank_fusion, parse_weights
-from bm25 import LocalBm25,highlight_spans
+from bm25 import LocalBm25,highlight_spans,content_terms,tokenize
 from agent import resolve_route
 from web_search import WebSearcher,build_chain,describe_chain,clean_text
 from telemetry import Timer
@@ -210,6 +210,7 @@ log=logging.getLogger('rag.search')
 class SearchBody(BaseModel):
  query:str; limit:int=8; mode:Literal['agent','local','web']='agent'; web:bool=False; overview:bool=False; answer:bool=False  # answer: deprecated alias of overview; /search never returns prose
  rerank:Optional[bool]=None; embed_cache:Optional[bool]=None  # per-request benchmark overrides, administrators only (so a benchmark never flips global settings)
+ low_confidence:bool=False; explain:bool=False  # low_confidence: also return passages below the relevance floor (flagged); explain: administrators only, adds per-candidate floor diagnostics
  local_only:bool=False  # "Local KB only": server-enforced, not trusted from the client alone (also forced by LOCAL_ONLY_ENFORCED below) -> no web, no Jev/plan/rerank, no overview eligibility
 P=namedtuple('P','username role')  # what request code reads from the user: plain values, safe to share across threads (an ORM instance is bound to one Session)
 SEARCH_KEYS=['TYPESAFE_API_KEY','JEV_MODEL','JEV_BASE_URL','JEV_TIMEOUT_MS','JEV_RERANK_ENABLED','JEV_RERANK_TOP_N','LLM_CONTEXT_BUDGET_TOKENS','WEB_SEARCH_ENABLED','WEB_SPECULATIVE','WEB_RERANK_ENABLED','WEB_RERANK_TOP_N','RRF_WEIGHTS','RRF_LEXICAL','RERANK_BLEND','LOCAL_ONLY_ENFORCED','LOCAL_RERANKER_ENABLED']
@@ -303,7 +304,23 @@ async def rerank_order(jev,q,cands,first,prior,timer,top_n,cfg,keys=None,allow_c
  partial=len(noul)<n
  if partial:timer.degrade('jev_rerank_partial')
  return blend_order(first,[noul.get(i) for i in range(n)],prior,parse_blend(setting(cfg,'RERANK_BLEND','RERANK_BLEND'))),noul,('jev_partial' if partial else 'jev_noul')
-async def local_results(p,q,limit,fused,jev,cfg,timer,rank_on,budget,top_n,label_out=None,cross_want=False):
+REL_JEV_MIN=float(os.getenv('REL_JEV_MIN','0.5'));REL_CE_MIN=float(os.getenv('REL_CE_MIN','-2.0'));REL_COV_MIN=float(os.getenv('REL_COV_MIN','0.75'));REL_DENSE_MIN=float(os.getenv('REL_DENSE_MIN','0.45'))  # calibrated on docs/eval/search_floor_cases.jsonl (76 cases, one corpus; re-run scripts/floor_eval.py after corpus changes)
+FLOOR_STOP={'how','what','why','when','where','which','who','whom','does','do','did','is','are','was','were','can','could','should','would','will','tell','explain','about','please','get','give'}  # question words must not dilute coverage
+def apply_floor(q,selected,rel,method,dense_scores):
+    """Relevance floor for local hits. Ranking alone never says a passage is RELEVANT: BM25 returns any chunk sharing one content term and the
+    nearest dense neighbour always exists, so out-of-corpus queries used to get confident-looking results. A hit is kept when ANY of:
+    the reranker judged it relevant (Jev score >= REL_JEV_MIN, or cross-encoder logit >= REL_CE_MIN), it contains >= REL_COV_MIN of the query's
+    content terms, or its dense cosine similarity is >= REL_DENSE_MIN. -> ([keep_bool,...], [diagnostic dicts]). Thresholds are env-tunable;
+    calibrate with scripts/evaluate.py --floor before changing them."""
+    qt=content_terms(q)-FLOOR_STOP;keep=[];diag=[]
+    for _,c,d in selected:
+        hit_terms=qt&set(tokenize(c.text));cov=(len(hit_terms)/len(qt)) if qt else 1.0;r=rel.get(c.id);dn=(dense_scores or {}).get(c.id);logit=None;ok=False
+        if method=='jev_noul' and r is not None:ok=r>=REL_JEV_MIN
+        elif method=='cross_encoder' and r is not None:logit=r*16-12;ok=logit>=REL_CE_MIN
+        if not ok:ok=cov>=REL_COV_MIN or len(hit_terms)>=3 or (dn is not None and dn>=REL_DENSE_MIN)
+        keep.append(ok);diag.append({'title':d.title,'page':c.page,'coverage':round(cov,2),'matched':len(hit_terms),'terms':len(qt),'rel':None if r is None else round(r,3),'ce_logit':None if logit is None else round(logit,2),'dense':None if dn is None else round(dn,3),'kept':ok})
+    return keep,diag
+async def local_results(p,q,limit,fused,jev,cfg,timer,rank_on,budget,top_n,label_out=None,cross_want=False,dense_scores=None,low_conf=False,explain=False):
  selected=await run_search(load_local,fused,p,max(limit*2,10,top_n if (rank_on or cross_want) else 0));method='rrf';rel={}
  if rank_on and selected:
   # The sync JevScoreReranker path (one blocking httpx.post inside the shared io pool) was removed from the request path; it can
@@ -323,9 +340,15 @@ async def local_results(p,q,limit,fused,jev,cfg,timer,rank_on,budget,top_n,label
   order=sorted(range(n),key=lambda i:scores[i],reverse=True)+list(range(n,len(selected)))
   rel={selected[i][1].id:max(0.0,min(1.0,(scores[i]+12)/16)) for i in range(n)}  # ms-marco cross-encoder logits run roughly -12..4; squashed to a 0..1 display range only, not a calibrated probability
   selected=[selected[i] for i in order];method='cross_encoder'
+ keep,diag=apply_floor(q,selected,rel,method,dense_scores);below={c.id for (_,c,_),k in zip(selected,keep) if not k};suppressed=0
+ if not low_conf:suppressed=len(below);selected=[it for it,k in zip(selected,keep) if k]  # low_confidence keeps everything but flags what is below the floor
  results,used,naive,_=pack_ranked_passages(selected,budget,limit)
- for r in results:r.update(source='local',highlights=highlight_spans(r['text'],q),rel=rel.get(r['chunk_id']))
- return results,method,{'packed_tokens':used,'naive_tokens':naive,'budget_tokens':budget}
+ for r in results:
+  r.update(source='local',highlights=highlight_spans(r['text'],q),rel=rel.get(r['chunk_id']))
+  if low_conf and r['chunk_id'] in below:r['low_confidence']=True
+ usage={'packed_tokens':used,'naive_tokens':naive,'budget_tokens':budget,'suppressed':suppressed}
+ if explain:usage['floor']=diag
+ return results,method,usage
 async def web_results(cfg,q,limit,jev,timer,rank_on,fresh,top_n):
  """BM25 + prior (+ optional Jev rerank) over provider snippets. Never embeds or vector-searches web text. Returns (results, method, meta, degraded).
  Jev web rerank is OFF by default (WEB_RERANK_ENABLED=true opts in): on the recorded fixtures it lowered nDCG. A provider cache hit never calls Jev."""
@@ -404,8 +427,12 @@ async def search(body:SearchBody,response:Response,user:User=Depends(current_use
   elif dense is None and not (mode=='local' or not web_on):dense=await timed(timer,'dense',leg_dense,q,permitted,use_ecache)
   if not (bm or fts) and dense and max(getattr(h,'score',1.0) for h in dense)<DENSE_ALONE:dense=[]  # no lexical evidence and only weak semantic neighbours: nothing relevant
   fused,_=reciprocal_rank_fusion(dense or [],fts or [],bm or [],weights=parse_weights(setting(cfg,'RRF_WEIGHTS','RRF_WEIGHTS')),lexical=(setting(cfg,'RRF_LEXICAL','RRF_LEXICAL') or 'max').strip().lower())
-  local_t=asyncio.ensure_future(local_results(p,q,limit,fused,jev,cfg,timer,rank_on,budget,top_n,label_out,cross_want))
- if local_t:results,method,usage=await local_t
+  dscores={(getattr(h,'payload',None) or {}).get('chunk_id'):getattr(h,'score',None) for h in (dense or [])}
+  local_t=asyncio.ensure_future(local_results(p,q,limit,fused,jev,cfg,timer,rank_on,budget,top_n,label_out,cross_want,dscores,body.low_confidence,body.explain and p.role=='admin'))
+ if local_t:
+  results,method,usage=await local_t
+  if not results and usage.get('suppressed') and web_on and route=='local':  # nothing confident locally and the user allowed web: look there instead of showing noise
+   route,reason='web','local_no_confident_match';web_t=asyncio.ensure_future(web_results(cfg,q,limit,jev,timer,rank_on,fresh,top_n))
  if web_t:
   wres,wmethod,meta,degraded=await web_t
   if route=='both':k=(limit+1)//2;results=results[:k]+wres[:limit-k]
@@ -423,7 +450,8 @@ async def search(body:SearchBody,response:Response,user:User=Depends(current_use
  chain=web_searcher().chain if web_t is not None or route in ('web','both') else []
  notice=web_notice(chain,meta,degraded) if route in ('web','both') else 'Token counts are estimates (packed context versus the top retrieved passages); no savings claim is made without a relevance and answer-quality benchmark.'
  out={'query':q,'intent':pl['query_type'],'route':route,'route_reason':reason,'results':results,'answer':None,'search_id':sid,'overview':{'eligible':elig,'reason':why},'reranker':method,'degraded':degraded,'degraded_stages':timer.degraded,'usage':dict(usage,jev=jev.stats),'notice':notice,'local_only':local_only}
- if not results and route in ('local','both') and not degraded:out['empty_reason']='no_relevant_results'
+ if not results and route in ('local','both') and not degraded:out['empty_reason']='no_confident_local_match' if usage.get('suppressed') else 'no_relevant_results'
+ out['suppressed']=usage.get('suppressed',0) if route in ('local','both') else 0
  out['timings']=timer.report();response.headers['Server-Timing']=timer.header()
  log.info('search route=%s results=%d reranker=%s timings=%s degraded=%s',route,len(results),method,out['timings'],timer.degraded)
  return out
@@ -490,7 +518,9 @@ async def _research_kb_search(p,q):
  bm,fts,dense=await asyncio.gather(run_search(leg_bm25,q,permitted),run_search(leg_fts,q,p),run_search(leg_dense,q,permitted,True))
  fused,_=reciprocal_rank_fusion(dense or [],fts or [],bm or [],lexical='max')
  selected=await run_search(load_local,fused,p,8)
- return [{'title':d.title,'text':c.text,'page':c.page,'document_id':d.id} for _,c,d in selected[:4]]
+ dscores={(getattr(h,'payload',None) or {}).get('chunk_id'):getattr(h,'score',None) for h in (dense or [])}
+ keep,_d=apply_floor(q,selected,{},'rrf',dscores)  # same floor as /search: do not feed irrelevant passages to the report writer
+ return [{'title':d.title,'text':c.text,'page':c.page,'document_id':d.id} for (_,c,d),k in zip(selected,keep) if k][:4]
 @app.post('/research')
 async def research_endpoint(body:ResearchBody,user:User=Depends(current_user),db:Session=Depends(db_session)):
  """SSE Deep Research: query decomposition, parallel web search per sub-question (+ optional local KB), one report-writing
