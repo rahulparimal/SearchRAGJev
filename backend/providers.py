@@ -101,6 +101,15 @@ def resolve_llm(g,tiers):
   pending=pending or m
  return None,'',''
 
+def is_local_url(url):
+ """True for a model served from this machine or LAN (Ollama etc.): cold loads are slow, so callers allow it more time and send it smaller prompts."""
+ from urllib.parse import urlparse
+ h=(urlparse(url or '').hostname or '').lower()
+ if h in ('localhost','host.docker.internal') or h.endswith('.local'):return True
+ try:
+  import ipaddress;ip=ipaddress.ip_address(h);return ip.is_loopback or ip.is_private
+ except ValueError:return False
+
 class ChatGenerator:
  """General OpenAI-compatible chat call over its own async httpx pool (no worker threads). Same retry/timeout shape as
  OverviewGenerator.agenerate (total budget, first-attempt cap, one retry on timeout/429/5xx honouring Retry-After) but
@@ -121,14 +130,7 @@ class ChatGenerator:
  @property
  def endpoint_id(self):return hashlib.sha256((self.base_url or '').encode()).hexdigest()[:12]
  @property
- def is_local(self):
-  """True for a model served from this machine or LAN (Ollama etc.): slower and smaller, so callers shrink its prompt."""
-  from urllib.parse import urlparse
-  h=(urlparse(self.base_url or '').hostname or '').lower()
-  if h in ('localhost','host.docker.internal') or h.endswith('.local'):return True
-  try:
-   import ipaddress;ip=ipaddress.ip_address(h);return ip.is_loopback or ip.is_private
-  except ValueError:return False
+ def is_local(self):return is_local_url(self.base_url)
  async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,retry=True):
   """retry=False: fail on the first timeout/5xx instead of retrying the same endpoint (callers with a failover model switch at once)."""
   g=self.setting;base,key,model=self._cfg()

@@ -5,10 +5,12 @@ default, so callers must disable this entirely when the deployment is local-KB-o
 import asyncio,hashlib,json,logging,os,re,time,httpx
 import tokencache as tc
 from urlcheck import safe_provider_url
+from providers import is_local_url
 log=logging.getLogger('rag.direct')
 
 MAX_CONCURRENT=int(os.getenv('DIRECT_MAX_CONCURRENT','32'));_active=[0]
 FIRST_TOKEN_S=float(os.getenv('DIRECT_FIRST_TOKEN_S','8'));TOTAL_S=float(os.getenv('DIRECT_TOTAL_S','60'))
+LOCAL_FIRST_TOKEN_S=float(os.getenv('DIRECT_LOCAL_FIRST_TOKEN_S','75'));LOCAL_TOTAL_S=float(os.getenv('DIRECT_LOCAL_TOTAL_S','150'))  # a local model's first request loads it into memory (measured 12+ s on a CPU-only Mac)
 SYSTEM=("You are a fast, concise general-knowledge assistant. Answer directly in plain text (light markdown such as short lists is fine). "
  "You have NOT been given any of the user's private documents or search results for this question -- if the question clearly depends on "
  "private/internal information you cannot know, say so briefly and suggest the user try Search instead. Say when you are not sure.")
@@ -61,13 +63,13 @@ async def stream_answer(g,query,history=None):
   try:body.update(json.loads(os.getenv('DIRECT_EXTRA_BODY','') or '{}'))
   except (ValueError,TypeError):pass
   hdr={'Authorization':f'Bearer {key}'} if key else {}
-  client=_client()
+  client=_client();first_s,total_s=(LOCAL_FIRST_TOKEN_S,LOCAL_TOTAL_S) if is_local_url(base) else (FIRST_TOKEN_S,TOTAL_S)
   yield _sse('meta',{'model':model})
   # read=TOTAL_S, not FIRST_TOKEN_S: httpx's read timeout bounds the gap between any two chunks of the WHOLE response, so a
   # tight value here would kill a healthy, slow-but-progressing stream (a reasoning model pausing between tokens) well before
   # TOTAL_S. Time-to-first-byte is bounded separately below by asyncio.wait(FIRST_TOKEN_S+3); total elapsed by the manual
   # monotonic check in the read loop.
-  req=client.build_request('POST',base+'/chat/completions',json=body,headers=hdr,timeout=httpx.Timeout(connect=3,read=TOTAL_S,write=3,pool=1))
+  req=client.build_request('POST',base+'/chat/completions',json=body,headers=hdr,timeout=httpx.Timeout(connect=3,read=total_s,write=3,pool=1))
   task=asyncio.ensure_future(client.send(req,stream=True))
   def _drain_task(t):
    """Let an abandoned client.send(...) finish (its own timeout bounds it) instead of cancelling mid-connect -- see jev.py's
@@ -77,7 +79,7 @@ async def stream_answer(g,query,history=None):
      r=await t;await r.aclose()
     except Exception:pass
    asyncio.ensure_future(sink())
-  try:done,pending=await asyncio.wait({task},timeout=FIRST_TOKEN_S+3)
+  try:done,pending=await asyncio.wait({task},timeout=first_s+3)
   except asyncio.CancelledError:_drain_task(task);raise  # caller (client disconnect) tore down this generator before we even had a response
   if not done:
    _drain_task(task)
@@ -87,7 +89,7 @@ async def stream_answer(g,query,history=None):
   except httpx.HTTPError as e:log.warning('direct llm connect failed reason=%s',type(e).__name__);yield _sse('error',{'reason':'provider_unavailable'});return
   if resp.status_code>=400:
    await resp.aclose();log.warning('direct llm status=%d',resp.status_code);yield _sse('error',{'reason':'provider_unavailable'});return
-  ttft=None;tokens=0;end=t0+TOTAL_S;text=[]
+  ttft=None;tokens=0;end=t0+total_s;text=[]
   try:
    async for line in resp.aiter_lines():
     if time.monotonic()>end:yield _sse('error',{'reason':'timeout'});return
