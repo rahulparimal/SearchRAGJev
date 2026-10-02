@@ -129,8 +129,47 @@ def research_status(db):
  if not model:return {'available':False,'reason':'not_configured'}
  if setting(db,'DEEP_RESEARCH_REQUIRE_JEV','DEEP_RESEARCH_REQUIRE_JEV').strip().lower()!='false' and not bool(setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY')):return {'available':False,'reason':'needs_jev'}
  return {'available':True,'reason':None,'model':model}
+def setup_status(db):
+ """For /auth/me: whether the deployment has any LLM / Jev entry at all (no secrets), so the UI can offer first-run setup."""
+ llm=direct.configured(lambda a,b:setting(db,a,b));jev=bool(setting(db,'TYPESAFE_API_KEY','TYPESAFE_API_KEY'))
+ return {'llm_configured':llm,'jev_configured':jev,'needs_setup':not (llm and jev)}
 @app.get('/auth/me')
-def me(user:User=Depends(current_user),db:Session=Depends(db_session)):return {'username':user.username,'role':user.role,'web_search':{'enabled':web_enabled(db),'providers':describe_chain(web_searcher().chain)},'local_only_enforced':local_only_enforced(db),'direct':direct.direct_status(lambda a,b:setting(db,a,b)),'research':research_status(db),'default_mode':os.getenv('DEFAULT_MODE','quick')}  # no secrets: lets the UI name where web queries go
+def me(user:User=Depends(current_user),db:Session=Depends(db_session)):return {'username':user.username,'role':user.role,'web_search':{'enabled':web_enabled(db),'providers':describe_chain(web_searcher().chain)},'local_only_enforced':local_only_enforced(db),'direct':direct.direct_status(lambda a,b:setting(db,a,b)),'research':research_status(db),'setup':setup_status(db),'default_mode':os.getenv('DEFAULT_MODE','quick')}  # no secrets: lets the UI name where web queries go
+class LlmProbe(BaseModel): base_url:str; model:str=''; api_key:str=''
+def _probe_target(db,body):
+ """Validated base URL and key for a connection test. A blank key reuses the saved base-LLM key only when the URL is the saved one, so a
+ typed URL can never receive a key that was saved for a different host."""
+ try:base=validate_provider_url(body.base_url)
+ except ValueError as e:raise HTTPException(422,str(e))
+ key=body.api_key.strip()
+ if not key and base==(setting(db,'LLM_BASE_URL','LLM_BASE_URL') or '').strip().rstrip('/'):key=setting(db,'LLM_API_KEY','LLM_API_KEY')
+ return base,({'Authorization':f'Bearer {key}'} if key else {})
+@app.post('/admin/llm/models')
+async def llm_models(body:LlmProbe,user:User=Depends(admin_user),db:Session=Depends(db_session)):
+ """Lists model ids from an OpenAI-compatible endpoint (/models), which Ollama also serves at /v1/models. Admin only."""
+ base,hdr=_probe_target(db,body)
+ try:
+  async with httpx.AsyncClient(timeout=8) as c:r=await c.get(base+'/models',headers=hdr)
+ except httpx.HTTPError as e:return {'ok':False,'error':type(e).__name__,'models':[]}
+ if r.status_code>=400:return {'ok':False,'error':f'http_{r.status_code}','models':[]}
+ try:items=r.json().get('data') or []
+ except (ValueError,AttributeError):return {'ok':False,'error':'bad_response','models':[]}
+ return {'ok':True,'models':sorted({m['id'] for m in items if isinstance(m,dict) and isinstance(m.get('id'),str)})[:200]}
+@app.post('/admin/llm/test')
+async def llm_test(body:LlmProbe,user:User=Depends(admin_user),db:Session=Depends(db_session)):
+ """One tiny chat completion to prove the endpoint, key and model work before saving. Reports a short error class, never the response body."""
+ if not body.model.strip():raise HTTPException(422,'Choose a model first')
+ base,hdr=_probe_target(db,body);t0=time.monotonic()
+ try:
+  async with httpx.AsyncClient(timeout=45) as c:
+   r=await c.post(base+'/chat/completions',headers=hdr,json={'model':body.model.strip(),'messages':[{'role':'user','content':'Reply with the single word OK.'}],'max_tokens':8,'stream':False})
+ except httpx.TimeoutException:return {'ok':False,'error':'timeout'}
+ except httpx.HTTPError as e:return {'ok':False,'error':type(e).__name__}
+ ms=round((time.monotonic()-t0)*1000)
+ if r.status_code>=400:return {'ok':False,'error':f'http_{r.status_code}','latency_ms':ms}
+ try:good=bool(r.json().get('choices'))
+ except (ValueError,AttributeError):good=False
+ return {'ok':good,'latency_ms':ms,**({} if good else {'error':'bad_response'})}
 @app.post('/admin/users',status_code=201)
 def create_user(body:UserCreate,user:User=Depends(admin_user),db:Session=Depends(db_session)):
  name=body.username.strip()
