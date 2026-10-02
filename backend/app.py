@@ -430,7 +430,7 @@ async def answer(body:AnswerBody,user:User=Depends(current_user),db:Session=Depe
  g=lambda n,e:snap.get(n,'')
  return StreamingResponse(direct.stream_answer(g,q,history),media_type='text/event-stream',headers=hdr)
 class ResearchBody(BaseModel):
- query:str; web_consent:bool=False; local_only:bool=False; include_kb:bool=False
+ query:str; web_consent:bool=False; local_only:bool=False; include_kb:bool=False; refresh:bool=False
 RESEARCH_KEYS=['DEEP_RESEARCH_ENABLED','DEEP_RESEARCH_LLM_BASE_URL','DEEP_RESEARCH_LLM_MODEL','DEEP_RESEARCH_LLM_API_KEY','OVERVIEW_LLM_BASE_URL','OVERVIEW_LLM_MODEL','OVERVIEW_LLM_API_KEY','LLM_BASE_URL','LLM_MODEL','LLM_API_KEY','LOCAL_ONLY_ENFORCED','WEB_SEARCH_ENABLED','TYPESAFE_API_KEY','JEV_MODEL','JEV_BASE_URL','JEV_TIMEOUT_MS']
 RESEARCH_PER_USER_PER_HOUR=int(os.getenv('DEEP_RESEARCH_PER_USER_PER_HOUR','10'))
 async def _research_kb_search(p,q):
@@ -464,7 +464,7 @@ async def research_endpoint(body:ResearchBody,user:User=Depends(current_user),db
  if setting(snap,'DEEP_RESEARCH_REQUIRE_JEV','DEEP_RESEARCH_REQUIRE_JEV').strip().lower()!='false' and not jev.enabled:
   raise HTTPException(503,'Deep Research needs a Jev key configured (to verify citations) or an admin override (DEEP_RESEARCH_REQUIRE_JEV=false)')
  kb_search=(lambda qq:_research_kb_search(p,qq)) if body.include_kb else None
- return StreamingResponse(research.stream_research(q,web_searcher(),jev,gen,kb_search=kb_search,include_kb=body.include_kb),media_type='text/event-stream',headers=hdr)
+ return StreamingResponse(research.stream_research(q,web_searcher(),jev,gen,kb_search=kb_search,include_kb=body.include_kb,refresh=body.refresh),media_type='text/event-stream',headers=hdr)
 @app.get('/documents/{doc_id}/snapshot')
 def snapshot(doc_id:str,page:int=1,user:User=Depends(current_user),db:Session=Depends(db_session)):
  d=db.get(Doc,doc_id)

@@ -45,6 +45,21 @@ Opus (acting as reviewer) was asked to triage the remaining not-started items fo
 - `RRF_WEIGHTS` (bm25=1, dense=1, fts=0.6) and `RERANK_BLEND` have not been retuned against a real baseline -- Opus flagged the two keyword legs (1.6 combined) as possibly outvoting the semantic leg, but this needs `evaluate.py`/`tune_rerank.py` numbers before changing, not a guess.
 - An embedding-model upgrade (e.g. `BAAI/bge-small-en-v1.5`, same 384 dims, 512-wordpiece limit) was flagged by Opus as a stretch goal requiring recalibrated `DENSE_MIN_SCORE`/`DENSE_ALONE_MIN` cutoffs and a full re-ingest -- not attempted.
 
+## Deep Research and token cache: status checklist
+Done and tested: planner/search/report/validate/verify pipeline; admin tab; full-page fetch (opt-in, SSRF-hardened); batched Jev grounding
+(`ground_batch`); sealed report/plan/route cache with single-flight (`tokencache.py`); Jev complexity routing that skips the LLM planner;
+gap-driven reflection retry; markdown download; cache `refresh` flag (API; no UI control yet); `/health` fields (`research_active`,
+`token_cache`); route-table smoke tests (`tests/test_routes.py`); structural eval runner (`scripts/research_eval.py`).
+
+NOT done (deliberately deferred, not forgotten):
+- Detached/resumable runs (`run_id` + event replay): a closed tab loses an in-flight run (the quota slot is already spent).
+- Map-reduce summaries when full-page text exceeds the context budget (pages are truncated to `DEEP_RESEARCH_PAGE_TEXT_CHARS` instead).
+- Streamed draft labelled unverified; PDF export (markdown download only).
+- Quick-answer cache and semantic (embedding) cache lookup; corpus-generation keys for KB-derived cache entries; a UI "refresh" button.
+- Thresholds unmeasured: `DEEP_RESEARCH_ROUTE_SIMPLE_BELOW=0.25` has no A/B against report quality yet; token savings are chars/4 estimates.
+- The research eval checks structure only; factual quality needs manual rubric review.
+- Page fetch has a residual DNS-rebinding window (documented in webfetch.py).
+
 ## Cleanup needed (unchanged from the original QA)
 Test users: qa-r1, qa-r2, qa-reader1, qa-reader2, rv_reader, evalr-* (no delete endpoint). Test document "QA Restricted Bonus Matrix". Rotate the TypeSafe and LLM keys, Postgres password and APP_SECRET_KEY (they were in an old working-tree `.env.example`; `.env.bak` holds copies).
 

@@ -164,5 +164,10 @@ class DeepResearchTests(unittest.TestCase):
                 return ([dict(self.hits[0],url='https://b.example/retry')] if q=='sub one' else self.hits),{}
         web=W();ev=collect(DR.stream_research('reflect topic',web,FakeJev(),FakeGen()))
         self.assertIn('reflecting',[d['stage'] for n,d in ev if n=='status']);self.assertEqual(dict(ev)['report']['gaps'],[])
+    def test_refresh_bypasses_cached_report(self):
+        self.enable_cache()
+        collect(DR.stream_research('refresh me',FakeWeb(),FakeJev(),FakeGen()))
+        g=FakeGen();collect(DR.stream_research('refresh me',FakeWeb(),FakeJev(),g,refresh=True))
+        self.assertTrue(g.calls)
 
 if __name__=='__main__':unittest.main()

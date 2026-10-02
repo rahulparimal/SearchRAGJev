@@ -110,7 +110,7 @@ def _claim_runs(blocks):
             for item in b['items']:out.extend(item)
     return out
 
-async def stream_research(query,web,jev,gen,kb_search=None,include_kb=False):
+async def stream_research(query,web,jev,gen,kb_search=None,include_kb=False,refresh=False):
     """web: a WebSearcher. jev: an AsyncJev (grounding is skipped when not jev.enabled). gen: a providers.ChatGenerator,
     already configured by the caller. kb_search: optional async callable(question)->[{'title','text','page',...}],
     already ACL-checked by the caller (app.py composes this from the existing local search legs)."""
@@ -118,7 +118,7 @@ async def stream_research(query,web,jev,gen,kb_search=None,include_kb=False):
     def ms():return round((time.monotonic()-t0)*1000)
     nq=tc.norm_query(query);ep=getattr(gen,'endpoint_id','')
     rkey=tc.make_key('report',nq,gen.model,ep,FETCH_PAGES,bool(jev.enabled)) if not include_kb else None  # KB-derived reports are ACL-dependent: never shared
-    if rkey:
+    if rkey and not refresh:  # refresh=True bypasses the cached read but still stores the new result
         hit=await tc.get('report',rkey)
         if hit:yield _sse('meta',{'model':gen.model,'cached':True});yield _sse('report',dict(hit,cached=True,elapsed_ms=ms()));yield _sse('done',{'elapsed_ms':ms()});return
     if _active[0]>=MAX_CONCURRENT:yield _sse('error',{'reason':'busy'});return
