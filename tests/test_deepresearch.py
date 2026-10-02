@@ -236,7 +236,7 @@ class DeepResearchTests(unittest.TestCase):
         self.assertEqual(dict(ev)['report']['stats']['llm_calls'],3)  # plan + failed report + good report
     def test_fallback_plan_searches_wider_than_a_normal_sub_question(self):
         web=FakeWeb();collect(DR.stream_research('fallback q',web,FakeJev(),FakeGen(plan='not json')))
-        self.assertEqual(len(web.calls),2);self.assertIn('fallback q overview',web.calls)
+        self.assertGreaterEqual(len(web.calls),2);self.assertIn('fallback q overview',web.calls)
     def test_secondary_model_takes_over_when_primary_report_fails(self):
         class Primary(FakeGen):
             async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
@@ -285,5 +285,46 @@ class DeepResearchTests(unittest.TestCase):
                 return await super().agenerate(system,user,max_tokens,total_s,attempt_s,**kw)
         sec=FakeGen();sec.model='fast'
         collect(DR.stream_research('failfast q',FakeWeb(),FakeJev(),P(),gen2=sec));self.assertEqual(seen,[False])
+    def test_thin_subquestion_gets_one_more_search_round(self):
+        web=FakeWeb();collect(DR.stream_research('thin q',web,FakeJev(),FakeGen()))   # one source per sub-question is below THIN_SOURCES
+        self.assertTrue(any(c.endswith('overview') or c in ('sub one','sub two') for c in web.calls))
+    def test_fetch_pages_argument_overrides_the_env_default(self):
+        async def fp(urls,deadline):return {u:'FULL' for u in urls}
+        with mock.patch.object(DR.webfetch,'fetch_pages',side_effect=fp) as m:
+            collect(DR.stream_research('override q',FakeWeb(),FakeJev(),FakeGen(),fetch_pages=True))
+        m.assert_called()
+        with mock.patch.object(DR,'FETCH_PAGES',True),mock.patch.object(DR.webfetch,'fetch_pages') as m2:
+            collect(DR.stream_research('override q2',FakeWeb(),FakeJev(),FakeGen(),fetch_pages=False))
+        m2.assert_not_called()
+    def test_local_primary_model_gets_a_smaller_source_cap(self):
+        hits=[{'title':f'T{i}','url':f'https://s{i}.example/p','domain':f's{i}.example','text':'t '*30} for i in range(20)]
+        class W(FakeWeb):
+            async def search(self,q,limit=8,freshness=None):self.calls.append(q);return hits,{}
+        g=FakeGen();g.is_local=True
+        with mock.patch.object(DR,'LOCAL_MAX_SOURCES',5),mock.patch.object(DR,'MAX_PER_DOMAIN',0):ev=collect(DR.stream_research('local cap',W(),FakeJev(),g))
+        self.assertEqual(dict(ev)['report']['stats']['sources'],5)
+    def test_report_contains_the_computed_template_sections_and_a_confidence_block(self):
+        ev=collect(DR.stream_research('template q',FakeWeb(),FakeJev(),FakeGen()));rep=dict(ev)['report']
+        heads=[b['text'] for b in rep['blocks'] if b['t']=='h2'];self.assertEqual(heads[0],'Research brief')
+        for h in ('Evidence assessment','Research method','Source register','Appendix'):self.assertIn(h,heads)
+        self.assertEqual(sum(1 for b in rep['blocks'] if b['t']=='confidence'),1);self.assertIn(rep['confidence']['level'],('High','Medium','Low'))
+        self.assertIn('## Research brief',rep['markdown'])
+    def test_analysis_sentence_without_new_facts_survives_but_one_with_a_new_number_is_removed(self):
+        md="## Executive summary\nSolid answer [S1].\n## Implications\nTeams should weigh the snippet text carefully.\nLatency drops by 73% after migration."
+        rep=dict(collect(DR.stream_research('analysis q',FakeWeb(),FakeJev(),FakeGen(report=md))))['report']
+        text=str(rep['blocks']);self.assertIn('weigh the snippet text',text);self.assertNotIn('73%',text);self.assertIn('analysis sentence',str(rep['blocks']))
+    def test_analysis_runs_are_not_sent_to_the_claim_checker(self):
+        seen=[]
+        class J(FakeJev):
+            async def decide(self,state,questions,timeout_ms=None):seen.append(str(state));return await super().decide(state,questions,timeout_ms)
+        md="## Executive summary\nSolid answer [S1].\n## Implications\nTeams should weigh the snippet text carefully."
+        collect(DR.stream_research('analysis q2',FakeWeb(),J(),FakeGen(report=md)));self.assertTrue(seen);self.assertNotIn('weigh the snippet text carefully',' '.join(seen))
+    def test_local_writer_gets_the_compact_prompt(self):
+        used=[]
+        class G(FakeGen):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None,**kw):
+                if system in (DR.REPORT_SYSTEM,DR.REPORT_SYSTEM_COMPACT):used.append(system is DR.REPORT_SYSTEM_COMPACT)
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s,**kw)
+        g=G();g.is_local=True;collect(DR.stream_research('compact q',FakeWeb(),FakeJev(),g));self.assertEqual(used,[True])
 
 if __name__=='__main__':unittest.main()

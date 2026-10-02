@@ -1,8 +1,8 @@
 import{Fragment} from 'react';
 import{Globe,LoaderCircle,CheckCircle2,XCircle,Copy} from 'lucide-react';
 
-export type Run={text:string;cites:number[];flag?:string|null};
-export type Block={t:'h2'|'h3';text:string}|{t:'p';runs:Run[]}|{t:'ul';items:Run[][]}|{t:'table';head:string[];rows:Run[][]};
+export type Run={text:string;cites:number[];flag?:string|null;analysis?:boolean;rowcited?:boolean};
+export type Block={t:'h2'|'h3'|'h4'|'label';text:string}|{t:'p';runs:Run[];label?:string}|{t:'ul'|'ol';items:Run[][]}|{t:'table';head:string[];rows:Run[][];analysis?:boolean}|{t:'confidence';level:'High'|'Medium'|'Low';reason:string};
 export type Citation={n:number;title:string;url:string|null;domain:string|null;source:string};
 export type Gap={id:string;question:string;reason:string};
 export type Verification={status:'verified'|'partial'|'unavailable'|'skipped';checked:number;supported:number;flagged:number;unchecked:number};
@@ -55,7 +55,7 @@ function Cites({cites}:{cites:number[]}){
  return <>{cites.map(n=><sup key={n}><a href={`#rs-S${n}`} className="cite-link">[{n}]</a></sup>)}</>;
 }
 function RunText({runs}:{runs:Run[]}){
- return <>{runs.map((r,i)=><Fragment key={i}>{i>0?' ':''}<span className={r.flag?'claim-flagged':''} title={r.flag?'Not independently verified against its cited source':undefined}>{r.text}</span><Cites cites={r.cites}/></Fragment>)}</>;
+ return <>{runs.map((r,i)=><Fragment key={i}>{i>0?' ':''}<span className={r.flag?'claim-flagged':r.analysis?'analysis-run':''} title={r.flag?'Not independently verified against its cited source':r.analysis?'Analysis: the model\'s own reasoning from the sources, not a statement taken from one':r.rowcited?'Cited through its table row':undefined}>{r.text}</span><Cites cites={r.cites}/></Fragment>)}</>;
 }
 export function ReportView({report,onCopy,onRefresh}:{report:Report;onCopy:()=>void;onRefresh?:()=>void}){
  if(!report||!report.blocks)return null;
@@ -67,7 +67,11 @@ export function ReportView({report,onCopy,onRefresh}:{report:Report;onCopy:()=>v
   {report.blocks.map((b,i)=>{
    if(b.t==='h2')return <h3 key={i}>{b.text}</h3>;
    if(b.t==='h3')return <h4 key={i}>{b.text}</h4>;
-   if(b.t==='p')return <p key={i}><RunText runs={b.runs}/></p>;
+   if(b.t==='h4')return <h5 className="research-h4" key={i}>{b.text}</h5>;
+   if(b.t==='label')return <div className="research-label" key={i}>{b.text}</div>;
+   if(b.t==='confidence')return <div className={`research-confidence ${b.level.toLowerCase()}`} key={i}><b>Confidence: {b.level}</b><span>{b.reason}</span></div>;
+   if(b.t==='ol')return <ol key={i}>{b.items.map((item,j)=><li key={j}><RunText runs={item}/></li>)}</ol>;
+   if(b.t==='p')return <p key={i}>{b.label&&<b className="research-label-inline">{b.label}: </b>}<RunText runs={b.runs}/></p>;
    if(b.t==='ul')return <ul key={i}>{b.items.map((item,j)=><li key={j}><RunText runs={item}/></li>)}</ul>;
    if(b.t==='table')return <div className="research-table-wrap" key={i}><table className="research-table"><thead><tr>{b.head.map((h,j)=><th key={j}>{h}</th>)}</tr></thead><tbody>{b.rows.map((row,j)=><tr key={j}>{row.map((c,k)=><td key={k}><RunText runs={[c]}/></td>)}</tr>)}</tbody></table></div>;
    return null;

@@ -79,4 +79,29 @@ class ParseReportTests(unittest.TestCase):
         cell=[b for b in r['blocks'] if b['t']=='table'][0]['rows'][0][2]
         self.assertEqual(cell['cites'],[1]);self.assertTrue(cell['rowcited'])
 
+CORPUS='elasticsearch scales horizontally with sharding. postgresql full text search uses gin indexes. teams should weigh operational simplicity.'
+class TemplateParsingTests(unittest.TestCase):
+    def test_label_only_line_and_labelled_paragraph_and_h4(self):
+        md="## Findings\n#### Finding 1: Scaling\n**What the evidence shows:** Elasticsearch scales horizontally [S1].\n**Supporting evidence:**\n- Sharding is used [S1]."
+        r=parse_report(md,1);t=[b['t'] for b in r['blocks']];self.assertEqual(t,['h2','h4','p','label','ul'])
+        p=[b for b in r['blocks'] if b['t']=='p'][0];self.assertEqual(p['label'],'What the evidence shows');self.assertEqual(p['runs'][0]['cites'],[1])
+    def test_ordered_list_becomes_ol_with_citations(self):
+        r=parse_report("## Key findings\n1. **First** thing matters [S1].\n2. Second thing matters [S2].",2);ol=[b for b in r['blocks'] if b['t']=='ol'][0]
+        self.assertEqual(len(ol['items']),2);self.assertEqual(ol['items'][1][0]['cites'],[2])
+    def test_uncited_analysis_sentence_kept_and_flagged_when_it_adds_no_new_facts(self):
+        md="## Implications\nTeams should weigh operational simplicity."
+        r=parse_report(md,1,analysis_corpus=CORPUS);run=r['blocks'][1]['runs'][0];self.assertTrue(run['analysis']);self.assertEqual(run['cites'],[]);self.assertEqual(r['stats']['analysis'],1);self.assertEqual(r['drop_rate'],0.0)
+    def test_analysis_sentence_with_a_new_number_or_name_is_dropped(self):
+        for bad in ("Latency will drop by 40% after migration.","Teams should adopt Kafka for this."):
+            r=parse_report("## Implications\n"+bad,1,analysis_corpus=CORPUS);self.assertEqual(len(r['blocks']),1);self.assertEqual(r['stats']['analysis_dropped'],1)
+    def test_analysis_allowance_is_off_without_a_corpus_and_outside_analysis_sections(self):
+        self.assertEqual(len(parse_report("## Implications\nTeams should weigh operational simplicity.",1)['blocks']),1)  # no corpus: dropped as uncited
+        r=parse_report("## Findings\nTeams should weigh operational simplicity.",1,analysis_corpus=CORPUS);self.assertEqual(len(r['blocks']),1);self.assertEqual(r['stats']['dropped_uncited'],1)
+    def test_recommendation_table_rows_need_no_citation_but_must_not_add_facts(self):
+        md="## Recommendations\n| Priority | Action |\n|---|---|\n| 1 | weigh operational simplicity |\n| 2 | adopt Kafka everywhere |\n| 3 | review sharding |"
+        r=parse_report(md,1,analysis_corpus=CORPUS);tb=[b for b in r['blocks'] if b['t']=='table'][0];self.assertEqual(len(tb['rows']),2);self.assertTrue(tb['analysis'])
+    def test_to_markdown_round_trips_new_block_types(self):
+        md="## Findings\n**Interpretation:** Teams should weigh operational simplicity.\n1. One thing [S1].\n2. Two things [S1]."
+        out=to_markdown(parse_report(md,1,analysis_corpus=CORPUS));self.assertIn('**Interpretation:**',out);self.assertIn('1. One thing [S1].',out)
+
 if __name__=='__main__':unittest.main()
