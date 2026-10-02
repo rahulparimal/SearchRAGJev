@@ -25,6 +25,7 @@ from telemetry import Timer
 from execpool import run_io,run_search,run_ov
 import logconf,config_store
 from cache import cache
+import history as chat_history
 import overview as ov,plan as planner,direct,deepresearch as research,tokencache
 from extensions import run as run_extension
 from urlcheck import validate_provider_url,safe_provider_url
@@ -188,7 +189,7 @@ def delete_user(username:str,user:User=Depends(admin_user),db:Session=Depends(db
  target=db.scalar(select(User).where(User.username==username))
  if not target:raise HTTPException(404,'User not found')
  if target.role=='admin' and (db.scalar(select(func.count()).select_from(User).where(User.role=='admin')) or 0)<=1:raise HTTPException(400,'Cannot delete the last administrator')
- db.delete(target);db.commit();log.info('user deleted by admin');return {'deleted':username}
+ db.delete(target);db.commit();chat_history.purge_user(username);log.info('user deleted by admin');return {'deleted':username}
 @app.post('/admin/documents')
 def upload(file:UploadFile=File(...),title:str=Form(''),acl:str=Form('*'),user:User=Depends(admin_user),db:Session=Depends(db_session)):
  data=file.file.read(MAX_UPLOAD+1)
@@ -375,6 +376,7 @@ async def search(body:SearchBody,response:Response,user:User=Depends(current_use
  timer=Timer();cfg=await run_io(config_store.snapshot,SEARCH_KEYS);await run_io(run_extension,'pre_query',{'query':q,'username':p.username})  # all settings: ONE cached snapshot, read off the event loop
  local_only=body.local_only or local_only_enforced(cfg)
  limit=max(1,min(body.limit,20)); mode=body.mode
+ asyncio.ensure_future(run_io(chat_history.record,p.username,'search',q,body.web,local_only))  # query text only; never blocks or fails the search
  if local_only:
   mode='local';body.web=False;body.overview=False;body.answer=False  # one choke point: no web, no overview eligibility; Jev disabled below makes plan/rerank fall away too
  # Local by default: web is used only when the user switched it on for this request AND the deployment allows it. A local-mode search never touches web.
@@ -483,7 +485,7 @@ async def search_overview(body:OverviewBody,user:User=Depends(current_user),db:S
  scope=hashlib.sha256(f'{p.username}|{p.role}'.encode()).hexdigest()[:16]  # per-user scope: users never share cached overviews
  return StreamingResponse(ov.stream_overview(rec,jev,gen,scope,run_extension),media_type='text/event-stream',headers=hdr)
 class AnswerBody(BaseModel):
- query:str; history:list[dict]=[]; local_only:bool=False  # local_only: defense in depth for a non-UI client; the UI itself never calls /answer when Local KB only is on
+ query:str; history:list[dict]=[]; local_only:bool=False; conversation_id:Optional[str]=None  # conversation_id: server-held thread (history then comes from Postgres, not the client); local_only: defense in depth for a non-UI client; the UI itself never calls /answer when Local KB only is on
 DIRECT_KEYS=['DIRECT_LLM_BASE_URL','DIRECT_LLM_MODEL','DIRECT_LLM_API_KEY','OVERVIEW_LLM_BASE_URL','OVERVIEW_LLM_MODEL','OVERVIEW_LLM_API_KEY','LLM_BASE_URL','LLM_MODEL','LLM_API_KEY','LOCAL_ONLY_ENFORCED']
 @app.post('/answer')
 async def answer(body:AnswerBody,user:User=Depends(current_user),db:Session=Depends(db_session)):
@@ -499,7 +501,42 @@ async def answer(body:AnswerBody,user:User=Depends(current_user),db:Session=Depe
  snap=await run_ov(config_store.snapshot,DIRECT_KEYS)
  if body.local_only or local_only_enforced(snap):raise HTTPException(403,'Quick answers are disabled: this deployment is local-KB-only')
  g=lambda n,e:snap.get(n,'')
- return StreamingResponse(direct.stream_answer(g,q,history),media_type='text/event-stream',headers=hdr)
+ cid=body.conversation_id
+ if cid:
+  if not re.fullmatch(r'[0-9a-f]{32}',cid):raise HTTPException(422,'Invalid conversation id')
+  turns=await run_io(chat_history.get_turns,user.username,cid)
+  if turns is None:cid=None  # unknown, expired or another user's thread: start a new one rather than reveal anything
+  else:history=turns[-6:]  # the server's own copy wins over whatever the client sent
+ new_conv=cid is None
+ if new_conv:cid=chat_history.new_conversation_id()
+ username=user.username
+ async def stream():
+  yield f'event: conversation\ndata: {json.dumps({"id":cid})}\n\n'
+  text=[];finished=False
+  async for ev in direct.stream_answer(g,q,history):
+   yield ev
+   head,_,rest=ev.partition('\n')
+   if head=='event: token':
+    try:text.append(json.loads(rest[6:]).get('t',''))
+    except ValueError:pass
+   elif head=='event: done':finished=True
+  if finished and text:  # only a completed answer is kept (a disconnect or error stores nothing)
+   if new_conv:await run_io(chat_history.record,username,'quick',q,False,False,cid)
+   await run_io(chat_history.append_turns,username,cid,q,''.join(text))
+ return StreamingResponse(stream(),media_type='text/event-stream',headers=hdr)
+@app.get('/history')
+async def get_history(user:User=Depends(current_user)):return {'enabled':chat_history.ENABLED,'items':await run_io(chat_history.list_history,user.username)}
+@app.delete('/history')
+async def clear_history(user:User=Depends(current_user)):return {'deleted':await run_io(chat_history.clear,user.username)}
+@app.delete('/history/{hid}')
+async def delete_history_entry(hid:str,user:User=Depends(current_user)):
+ if not await run_io(chat_history.delete_entry,user.username,hid):raise HTTPException(404,'History entry not found')
+ return {'deleted':1}
+@app.get('/conversations/{cid}')
+async def get_conversation(cid:str,user:User=Depends(current_user)):
+ turns=await run_io(chat_history.get_turns,user.username,cid) if re.fullmatch(r'[0-9a-f]{32}',cid) else None
+ if turns is None:raise HTTPException(404,'Conversation not found')
+ return {'id':cid,'turns':turns}
 def research_generators(g):
  """-> (primary, secondary_or_None, role). Prefix is DEEP_RESEARCH_LLM so the admin tab's DEEP_RESEARCH_LLM_* settings are what is read
  (it was 'DEEP_RESEARCH', which silently ignored them). The secondary has no fallback tiers: it is only used when explicitly configured."""
@@ -538,6 +575,7 @@ async def research_endpoint(body:ResearchBody,user:User=Depends(current_user),db
  p=P(user.username,user.role)
  count=await cache.aincr(f'research_quota:v1:{p.username}:{int(time.time()//3600)}',3600,pool=run_ov)
  if count>RESEARCH_PER_USER_PER_HOUR:raise HTTPException(429,f'Deep Research is limited to {RESEARCH_PER_USER_PER_HOUR} runs per hour per user')
+ asyncio.ensure_future(run_io(chat_history.record,p.username,'research',q,True,False))
  g=lambda n,e:snap.get(n,'')
  jev=jev_client(snap)
  gen,gen2,role=research_generators(g)

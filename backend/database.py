@@ -17,6 +17,14 @@ class Chunk(Base):
 class Setting(Base):
  __tablename__='settings';key:Mapped[str]=mapped_column(String(100),primary_key=True);encrypted_value:Mapped[str]=mapped_column(Text)
 
+class SearchHistory(Base):
+ """One row per search / Quick-answer conversation / research run, kept per user and pruned to the newest few (backend/history.py). Stores the QUERY only:
+ never result text, KB passages or reports (permissions can change; the user re-runs instead)."""
+ __tablename__='search_history';id:Mapped[str]=mapped_column(String(40),primary_key=True);username:Mapped[str]=mapped_column(String(100),index=True);mode:Mapped[str]=mapped_column(String(16));query:Mapped[str]=mapped_column(Text)
+ web:Mapped[int]=mapped_column(Integer,default=0);local_only:Mapped[int]=mapped_column(Integer,default=0);conversation_id:Mapped[str|None]=mapped_column(String(40),nullable=True,index=True);created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=lambda:datetime.now(timezone.utc),index=True)
+class ConversationTurn(Base):
+ """A Quick-answer chat turn (the user's own message and the model's reply), owner-scoped; capped per conversation."""
+ __tablename__='conversation_turns';id:Mapped[int]=mapped_column(primary_key=True,autoincrement=True);conversation_id:Mapped[str]=mapped_column(String(40),index=True);username:Mapped[str]=mapped_column(String(100),index=True);idx:Mapped[int]=mapped_column(Integer);role:Mapped[str]=mapped_column(String(12));content:Mapped[str]=mapped_column(Text);created_at:Mapped[datetime]=mapped_column(DateTime(timezone=True),default=lambda:datetime.now(timezone.utc))
 def ensure_schema():
  """create_all does not alter existing tables, so additive columns are applied idempotently here (API startup, worker start, CLI)."""
  Base.metadata.create_all(engine)
