@@ -1,0 +1,14 @@
+.git
+venv
+node_modules
+frontend/node_modules
+frontend/dist
+__pycache__
+*.pyc
+uploads
+evaluation-runs
+.run
+*.log
+.env
+.env.bak
+docker/searxng

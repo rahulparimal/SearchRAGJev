@@ -85,6 +85,59 @@ class TimingsAndOverviewDefaults(unittest.TestCase):
             rec=OV.load_evidence(r['search_id'],'alice');self.assertNotIn('secret',{e['document_id'] for e in rec['evidence']})
             r2=aio(A.search(A.SearchBody(query='how does the merger plan treat parental leave'),T.Response(),reader('bob'),self.db));self.assertIn('secret',{x['document_id'] for x in r2['results']})
 
+class LocalOnlyToggle(unittest.TestCase):
+    def setUp(self):
+        local_env(self);self.calls=[]
+        outer=self
+        class P:
+            name='fake';engines=['FakeEngine']
+            def fetch(s,q,n,f=None):outer.calls.append(q);return [{'title':'t','url':'https://a.example/p','text':'body'}]
+        self.searcher=ws.WebSearcher(chain=[P()]);p=mock.patch.object(A,'web_searcher',return_value=self.searcher);p.start();self.addCleanup(p.stop)
+        e=mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'true','TYPESAFE_API_KEY':'k'});e.start();self.addCleanup(e.stop)
+    def test_local_only_forces_local_disables_web_and_jev(self):
+        jev=FakeJev();jev.enabled=True
+        with mock.patch.object(A,'jev_client',return_value=jev),mock.patch.object(A,'OverviewGenerator') as g:
+            r=aio(A.search(A.SearchBody(query='how many weeks of parental leave do we get',mode='agent',web=True,overview=True,local_only=True),T.Response(),reader(),self.db))
+        self.assertEqual(r['route'],'local');self.assertEqual(r['route_reason'],'local_only');self.assertTrue(r['local_only'])
+        self.assertEqual(self.calls,[]);self.assertEqual(jev.calls,[]);g.assert_not_called()
+        self.assertEqual(r['overview'],{'eligible':False,'reason':'toggle_off'})  # overview/answer are forced off by the local_only short-circuit
+        self.assertIsNone(r['search_id'])
+    def test_local_only_enforced_overrides_client_request(self):
+        jev=FakeJev();jev.enabled=True
+        with mock.patch.object(A,'jev_client',return_value=jev),mock.patch.dict(os.environ,{'LOCAL_ONLY_ENFORCED':'true'}):
+            r=aio(A.search(A.SearchBody(query='capital of france',mode='web',web=True),T.Response(),reader(),self.db))
+        self.assertEqual(r['route'],'local');self.assertTrue(r['local_only']);self.assertEqual(self.calls,[])
+    def test_overview_endpoint_403_when_enforced(self):
+        with mock.patch.dict(os.environ,{'LOCAL_ONLY_ENFORCED':'true'}):
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.search_overview(A.OverviewBody(search_id='x'*20),reader(),self.db))
+        self.assertEqual(ctx.exception.status_code,403)
+    def test_answer_endpoint_403_when_enforced(self):
+        with mock.patch.dict(os.environ,{'LOCAL_ONLY_ENFORCED':'true'}):
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.answer(A.AnswerBody(query='hello'),reader(),self.db))
+        self.assertEqual(ctx.exception.status_code,403)
+    def test_local_only_falls_back_to_local_cross_encoder_when_jev_off(self):
+        """With Jev off (local_only) and the local cross-encoder ready, local_only searches get SOME reranking instead of plain RRF."""
+        T.add_doc(self.db,'x',['parental leave sixteen weeks distractor paragraph that also describes the office garage, visitor passes, reserved bays, electric vehicle charging and weekend access rules in some detail'])
+        def score(q,texts):return [0.9 if 'garage' in t else 0.1 for t in texts]
+        ce=mock.Mock(ready=True,score=mock.Mock(side_effect=score))
+        with mock.patch.object(A,'jev_client',return_value=FakeJev(enabled=False)),mock.patch.object(A,'cross_encoder',ce),mock.patch.dict(os.environ,{'LOCAL_RERANKER_ENABLED':'true'}):
+            r=aio(A.search(A.SearchBody(query='parental leave sixteen weeks',local_only=True),T.Response(),reader(),self.db))
+        self.assertEqual(r['reranker'],'cross_encoder');ce.score.assert_called_once();self.assertEqual(r['results'][0]['document_id'],'x')
+    def test_cross_encoder_disabled_or_cold_keeps_plain_rrf(self):
+        ce=mock.Mock(ready=False,score=mock.Mock())
+        with mock.patch.object(A,'jev_client',return_value=FakeJev(enabled=False)),mock.patch.object(A,'cross_encoder',ce),mock.patch.dict(os.environ,{'LOCAL_RERANKER_ENABLED':'true'}):
+            r=aio(A.search(A.SearchBody(query='leave policy',local_only=True),T.Response(),reader(),self.db))
+        self.assertEqual(r['reranker'],'rrf');ce.score.assert_not_called();self.assertIn('cross_encoder_warming',r['degraded_stages'])
+        with mock.patch.object(A,'jev_client',return_value=FakeJev(enabled=False)),mock.patch.object(A,'cross_encoder',mock.Mock(ready=True)),mock.patch.dict(os.environ,{'LOCAL_RERANKER_ENABLED':'false'}):
+            r2=aio(A.search(A.SearchBody(query='leave policy',local_only=True),T.Response(),reader(),self.db))
+        self.assertEqual(r2['reranker'],'rrf')
+    def test_dense_leg_skips_cold_embedder_instead_of_blocking(self):
+        A.embedder.ready=False
+        try:
+            with mock.patch.object(A,'jev_client',return_value=FakeJev(enabled=False)):r=aio(A.search(A.SearchBody(query='parental leave'),T.Response(),reader(),self.db))
+            self.assertIn('dense_warming',r['degraded_stages']);A.embedder.encode_query.assert_not_called()
+        finally:A.embedder.ready=True
+
 class OverviewEndpoint(unittest.TestCase):
     def setUp(self):local_env(self);self.u=reader()
     def start(self,q='how many weeks of parental leave do we get',web=False):
@@ -348,6 +401,16 @@ class LocalCaches(unittest.TestCase):
         ids=lambda w:{c for c,_ in R.reciprocal_rank_fusion(dense,fts,bm,weights=R.parse_weights(w))[0]}
         self.assertEqual(ids(None),{'d1','f1','b1'});self.assertEqual(ids('dense=0'),{'f1','b1'});self.assertEqual(ids('fts=0,bm25=0'),{'d1'})
         top=R.reciprocal_rank_fusion(dense,fts,bm,weights=R.parse_weights('bm25=5'))[0][0][0];self.assertEqual(top,'b1')
+    def test_lexical_max_fusion_lets_a_pure_dense_match_outrank_mediocre_double_counted_keyword_noise(self):
+        class H:
+            def __init__(s,c):s.payload={'chunk_id':c}
+        dense=[H('semantic_hit')]  # rank 1 in dense (score 1/61=.0164), absent from both lexical legs (a paraphrase with no shared keywords)
+        fts=[{'chunk_id':f'f{i}','doc_id':'x'} for i in range(20)]+[{'chunk_id':'keyword_noise','doc_id':'x'}]  # keyword_noise ranked 21st in both lexical legs:
+        bm=[{'chunk_id':f'b{i}','doc_id':'x'} for i in range(20)]+[{'chunk_id':'keyword_noise','doc_id':'x'}]   # sum=.6/81+1/81=.0198 (beats dense); max=1/81=.0123 (loses to dense)
+        order_sum=[c for c,_ in R.reciprocal_rank_fusion(dense,fts,bm,lexical='sum')[0]]
+        order_max=[c for c,_ in R.reciprocal_rank_fusion(dense,fts,bm,lexical='max')[0]]
+        self.assertLess(order_sum.index('keyword_noise'),order_sum.index('semantic_hit'))  # old behaviour: summed lexical votes beat a rank-1 dense-only match
+        self.assertLess(order_max.index('semantic_hit'),order_max.index('keyword_noise'))  # fixed: a single lexical leg's rank no longer gets double-counted
     def test_no_corpus_scan_per_search_with_generation(self):
         T.add_doc(self.db,'a',['parental leave sixteen weeks paid'])
         sql=[];fn=lambda c,cur,st,p,ctx,m:sql.append(st);event.listen(engine,'before_cursor_execute',fn);self.addCleanup(lambda:event.remove(engine,'before_cursor_execute',fn))
@@ -381,6 +444,58 @@ class LocalCaches(unittest.TestCase):
         t=Timer()
         with t.stage('bm25'):pass
         t.degrade('x');t.degrade('x');r=t.report();self.assertIn('total',r);self.assertEqual(t.degraded,['x']);self.assertIn('bm25;dur=',t.header())
+
+class DeepResearchEndpoint(unittest.TestCase):
+    def setUp(self):local_env(self)
+    def enable_env(self):
+        return mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'true','DEEP_RESEARCH_ENABLED':'true','TYPESAFE_API_KEY':'k'})
+    def test_403_when_local_only(self):
+        with self.enable_env():
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=True,local_only=True),reader('u1'),self.db))
+        self.assertEqual(ctx.exception.status_code,403)
+    def test_403_when_local_only_enforced(self):
+        with self.enable_env(),mock.patch.dict(os.environ,{'LOCAL_ONLY_ENFORCED':'true'}):
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=True),reader('u2'),self.db))
+        self.assertEqual(ctx.exception.status_code,403)
+    def test_403_when_web_search_disabled(self):
+        with mock.patch.dict(os.environ,{'DEEP_RESEARCH_ENABLED':'true','TYPESAFE_API_KEY':'k'}):
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=True),reader('u3'),self.db))
+        self.assertEqual(ctx.exception.status_code,403)
+    def test_403_when_deep_research_not_enabled(self):
+        with mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'true','TYPESAFE_API_KEY':'k'}):
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=True),reader('u4'),self.db))
+        self.assertEqual(ctx.exception.status_code,403)
+    def test_403_when_no_web_consent(self):
+        with self.enable_env():
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=False),reader('u5'),self.db))
+        self.assertEqual(ctx.exception.status_code,403)
+    def test_503_when_jev_required_but_not_configured(self):
+        with mock.patch.dict(os.environ,{'WEB_SEARCH_ENABLED':'true','DEEP_RESEARCH_ENABLED':'true'}):
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=True),reader('u6'),self.db))
+        self.assertEqual(ctx.exception.status_code,503)
+    def test_422_on_empty_query(self):
+        with self.enable_env():
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.research_endpoint(A.ResearchBody(query=' ',web_consent=True),reader('u7'),self.db))
+        self.assertEqual(ctx.exception.status_code,422)
+    def test_quota_429_after_limit(self):
+        with self.enable_env(),mock.patch.dict(os.environ,{'DEEP_RESEARCH_PER_USER_PER_HOUR':'2'}),mock.patch.object(A.research,'stream_research',return_value=_aiter([])):
+            A.RESEARCH_PER_USER_PER_HOUR=2
+            u=reader('u8')
+            aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=True),u,self.db))
+            aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=True),u,self.db))
+            with self.assertRaises(A.HTTPException) as ctx:aio(A.research_endpoint(A.ResearchBody(query='q',web_consent=True),u,self.db))
+        self.assertEqual(ctx.exception.status_code,429)
+    def test_success_streams_and_passes_consent_flags_through(self):
+        captured={}
+        def fake_stream(query,web,jev,gen,kb_search=None,include_kb=False):
+            captured.update(query=query,include_kb=include_kb,has_kb=kb_search is not None);return _aiter(['event: done\ndata: {}\n\n'])
+        with self.enable_env(),mock.patch.object(A.research,'stream_research',side_effect=fake_stream):
+            resp=aio(A.research_endpoint(A.ResearchBody(query='  deep question  ',web_consent=True,include_kb=True),reader('u9'),self.db))
+        self.assertIsInstance(resp,A.StreamingResponse)
+        self.assertEqual(captured['query'],'deep question');self.assertTrue(captured['include_kb']);self.assertTrue(captured['has_kb'])
+
+async def _aiter(items):
+    for i in items:yield i
 
 class StaticChecks(unittest.TestCase):
     def test_ui_defaults_and_wording(self):

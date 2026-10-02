@@ -22,4 +22,10 @@ def ensure_schema():
  Base.metadata.create_all(engine)
  with engine.begin() as conn:
   conn.execute(text('ALTER TABLE documents ADD COLUMN IF NOT EXISTS processing_started_at TIMESTAMPTZ'))
-  conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chunks_search_text ON chunks USING GIN (to_tsvector('english', text))"))
+  # unaccent() is STABLE (depends on search_path), so it cannot back a functional index directly; wrap it with the dictionary
+  # named explicitly, which IS immutable-safe (Postgres docs' own pattern). Without this, accented/transliterated source text
+  # (e.g. IAST "Viṣṇu") never matches a plain-ASCII query ("Vishnu"/"Visnu") because the stored and queried lexemes differ.
+  conn.execute(text('CREATE EXTENSION IF NOT EXISTS unaccent'))
+  conn.execute(text("CREATE OR REPLACE FUNCTION immutable_unaccent(text) RETURNS text AS $$ SELECT unaccent('unaccent', $1) $$ LANGUAGE sql IMMUTABLE PARALLEL SAFE STRICT"))
+  conn.execute(text('DROP INDEX IF EXISTS ix_chunks_search_text'))  # superseded by the unaccent-aware index below
+  conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chunks_search_text_unaccent ON chunks USING GIN (to_tsvector('english', immutable_unaccent(text)))"))

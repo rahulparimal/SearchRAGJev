@@ -17,6 +17,34 @@ How to run the solution locally and in an enterprise-style deployment, plus the 
 - The embedding model is baked into the api/worker image (`HF_HOME=/opt/models`), so the first query downloads nothing. The API warms the model at startup; `/health` reports `embedder: warming|ok` (informational).
 - Optional SearXNG: `COMPOSE_PROFILES=websearch ./rag up`, then set `WEB_PROVIDERS=searxng,ddgs` and `SEARXNG_URL=http://searxng:8080` (config in `docker/searxng/settings.yml`).
 
+## 0b. All-in-one image (single container)
+
+An alternative to `./rag up`'s multi-container compose stack: Postgres, Redis, Qdrant, the API, the Celery worker and the
+built frontend (via nginx) all run as supervised processes inside ONE container, from one image -- closer to how tools like
+Open WebUI ship. Everything persists under a single `/data` volume.
+
+```bash
+docker build -f docker/all-in-one/Dockerfile -t ragsearch-allinone .     # from the repo root; ~5-15 min (torch + 2 models)
+docker run -d -p 8000:80 -v ragdata:/data --name ragsearch ragsearch-allinone
+docker logs -f ragsearch   # first boot prints the generated admin password once -- save it, it is not printed again
+```
+
+Open `http://localhost:8000`. `APP_SECRET_KEY`, `POSTGRES_PASSWORD` and `ADMIN_PASSWORD` are generated on first boot and
+persisted to `/data/secrets/` (so a `docker restart`, or upgrading the image against the same volume, keeps existing
+sessions valid and existing encrypted admin settings readable); pass `-e ADMIN_PASSWORD=... -e APP_SECRET_KEY=...` etc. at
+`docker run` time to set them explicitly instead. Provider keys (Jev, LLM, Quick answer) are configured the same way as
+usual: the admin console, or `-e TYPESAFE_API_KEY=...` / `-e LLM_BASE_URL=...` and so on (see `.env.example` for the full list).
+
+**What this trades away** versus the compose deployment: restarting the container to pick up a new image restarts Postgres
+and Qdrant too (brief downtime, no data loss -- it's all on the volume); there's no independent scaling of the API; health
+reflects the whole container, not per-service; and the image is large (~3-4 GB, since it bundles Postgres + Qdrant + Redis +
+torch + two ML models). Postgres and Redis run as their own non-root system users (via `gosu`, required for Postgres to
+start at all); Qdrant, the API, the worker and nginx run as root inside the container for simplicity. Use this for a
+single-box or trial deployment; use `docker-compose.yml` (or split services further, e.g. a managed Postgres) for anything
+that needs to scale, restart pieces independently, or run on a platform that assumes one process per container (Kubernetes,
+Cloud Run, ECS Fargate). See `docker/all-in-one/Dockerfile` for the full build and `docker/all-in-one/entrypoint.sh` for
+first-boot initialization.
+
 ## 1. Running locally (macOS/Linux dev)
 
 Prerequisites: Docker, Python 3.12, Node 20+.
@@ -96,7 +124,7 @@ Searches are local by default. The search screen has a **Web search** toggle (of
 
 - **Logs are structured** (JSON lines on stderr, `LOG_LEVEL`, `LOG_FORMAT=text` for plain text). Every swallowed failure is logged without query text, document text or secrets: `rag.jev` (`jev call failed reason=timeout|http_500|... breaker=open`), `rag.search` (`search leg bm25 failed`), `rag.web`, `rag.llm`, `rag.overview`. An outage that used to be invisible now shows up as repeated `jev call failed` lines, `degraded_stages` containing `jev_unavailable`/`jev_rerank_unavailable`, and a failing `./rag doctor`.
 - **Jev client**: one pooled keep-alive client (`JEV_POOL_MAX`, default 128; pre-warmed at start). Deadlines come from httpx timeouts; an in-flight request is never cancelled (cancelling connecting requests wedged the old 32-slot pool). After 5 consecutive timeouts the client is rebuilt; 5 failures in 10 s open a circuit breaker for 10 s (`/admin/config` shows `jev_breaker`; `./rag doctor` fails while it is open).
-- **Rerank**: batched Noul (up to 12 candidates per Jev request (compact ~3.5k-char state), partial answers accepted, per-(model, query, chunk, ACL scope) score cache, failed attempts negatively cached for 30 s). `JEV_RERANK_STYLE=noul_parallel` restores one request per candidate, `score_batch` the legacy single sync request.
+- **Rerank**: batched Noul only (`JEV_BATCH_SIZE` candidates per Jev request, default 20, matching `JEV_RERANK_TOP_N` so a full rerank costs one request; compact ~4.5k-char state; partial answers accepted; per-(model, query, chunk, ACL scope) score cache; failed attempts negatively cached for 30 s). The old per-candidate (`noul_parallel`) and sync (`score_batch`) styles, previously selectable via `JEV_RERANK_STYLE`, were removed from the request path (they collapsed under concurrency / blocked a shared thread pool); that env var no longer does anything.
 - **Overview**: runs on its own async httpx pool (no worker threads), at most `OVERVIEW_MAX_CONCURRENT` (8) per API process (more get `withheld: busy`), one retry on timeout/429/5xx (Retry-After honoured) inside `OVERVIEW_TIMEOUT_S`. `withheld` reasons: `insufficient_evidence`, `unsupported_claim` (the lead sentence failed grounding), `provider_unavailable` (the LLM), `jev_unavailable` (the verification service), `busy`, `ineligible`, `expired`. A bullet that fails grounding is dropped; the rest is shown. Grounding threshold `OVERVIEW_GROUNDED_MIN` (0.6, calibrated, see SEARCH_REDESIGN section 13). Evidence is stored under `search_id` as ids only (text re-read from the database with an ACL re-check), sealed with Fernet, TTL 120 s; cached overviews are sealed too (TTL 300 s) and keyed by provider endpoint and model.
 - **Provider URLs** (`JEV_BASE_URL`, `LLM_BASE_URL`, `OVERVIEW_LLM_BASE_URL`, `SEARXNG_URL`): http/https only, no credentials, no link-local/metadata addresses; optional `PROVIDER_URL_ALLOWLIST` (hosts or `.suffix`, comma-separated). Changing a URL's host in the admin console requires entering its API key again. The LLM key is never sent to a different overview host.
 - **Admin API**: `GET /admin/users`, `DELETE /admin/users/{username}` (admin only; not yourself, not the last admin). `POST /search` accepts `rerank` and `embed_cache` overrides for administrators only (used by `scripts/evaluate.py`; no global setting is flipped).

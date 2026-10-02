@@ -1,19 +1,34 @@
 """Okapi BM25 (ported from the Dharma module's bm25.js) for local chunks and web snippets."""
-import hashlib,math,re,threading
+import hashlib,math,re,threading,unicodedata
 from collections import Counter,OrderedDict
 from cache import cache
 
 STOP=set('a an the of to in on for and or is are was were be do does did how what when where who why which can could should would i me my we our you your it its this that with about from by at as get many much'.split())
 def content_terms(text:str)->set[str]:return {t for t in tokenize(text) if t not in STOP}
 
+def fold_accents(text:str)->str:
+    """NFKD-decompose and drop combining marks: 'Viṣṇu'->'Visnu', 'Śiva'->'Siva', 'café'->'cafe'. Matches Postgres's
+    unaccent() exactly (verified), so a query typed without diacritics can match transliterated/accented source text that
+    otherwise tokenizes to nothing useful (the old `[^a-z0-9\\s]` strip turned 'viṣṇu' into 'vi u')."""
+    return ''.join(c for c in unicodedata.normalize('NFKD',text or '') if not unicodedata.combining(c))
 def tokenize(text:str)->list[str]:
-    return re.sub(r'[^a-z0-9\s]',' ',(text or '').lower()).split()
+    return re.sub(r'[^a-z0-9\s]',' ',fold_accents(text).lower()).split()
 
+def _fold_same_length(text:str)->str:
+    """Per-character accent fold that always preserves string length 1:1 with the input (unlike fold_accents, which is fine
+    to change length for tokenize()): each char's base form replaces it only when that decomposes to exactly one character,
+    so offsets computed against the folded string stay valid against the original `text` for highlighting."""
+    out=[]
+    for ch in text or '':
+        base=''.join(c for c in unicodedata.normalize('NFKD',ch) if not unicodedata.combining(c))
+        out.append(base if len(base)==1 else ch)
+    return ''.join(out)
 def highlight_spans(text:str,query:str,cap:int=24)->list[list[int]]:
     """[start,end] offsets of query content terms in `text`, merged; the client renders them as text nodes (never HTML)."""
     terms=sorted(content_terms(query),key=len,reverse=True)
     if not terms or not text:return []
-    spans=sorted([m.start(),m.end()] for m in re.finditer(r'\b(?:'+'|'.join(re.escape(t) for t in terms)+r')\b',text,re.I));out=[]
+    folded=_fold_same_length(text)  # search on the folded text (same length as `text`) so an unaccented query term can still match accented source text
+    spans=sorted([m.start(),m.end()] for m in re.finditer(r'\b(?:'+'|'.join(re.escape(t) for t in terms)+r')\b',folded,re.I));out=[]
     for a,b in spans:
         if out and a<=out[-1][1]:out[-1][1]=max(out[-1][1],b)
         else:out.append([a,b])

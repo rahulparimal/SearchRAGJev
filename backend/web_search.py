@@ -7,6 +7,7 @@ from urllib.parse import urlparse,urlunparse,parse_qsl,urlencode
 from bm25 import Bm25Index,tokenize
 from cache import cache
 from urlcheck import safe_provider_url
+import execpool
 log=logging.getLogger('rag.web')
 
 CITATION=re.compile(r'\[S\d+\]')
@@ -147,10 +148,11 @@ async def hedged_fetch(chain,breakers,query,limit,freshness=None,hedge_ms=700,ti
     deadline count. Raises WebUnavailable on errors/timeouts. Returns (rows, meta{provider,hedged,sent})."""
     avail=[p for p in chain if breakers.setdefault(p.name,CircuitBreaker()).allow()]
     if not avail:raise WebUnavailable('breaker_open',[])
-    end=time.monotonic()+timeout_ms/1000;pending={};nxt=0;hedged=False;retried=False;errored=set();empties=set();sent=[]  # a request counts once per provider toward its breaker, however many retries it made
+    if execpool.web_busy():raise WebUnavailable('web_busy',[])  # fail fast rather than queue behind a saturated dedicated web pool
+    end=time.monotonic()+timeout_ms/1000;pending={};nxt=0;hedged=False;retried=False;errored=set();empties=set();sent=[];local_busy=False  # a request counts once per provider toward its breaker, however many retries it made
     def launch():
         nonlocal nxt
-        p=avail[nxt];nxt+=1;sent.append(p.name);pending[asyncio.ensure_future(asyncio.to_thread(p.fetch,query,limit,freshness))]=p
+        p=avail[nxt];nxt+=1;sent.append(p.name);pending[asyncio.ensure_future(execpool.run_web(p.fetch,query,limit,freshness))]=p
     launch()
     try:
         while pending:
@@ -160,14 +162,23 @@ async def hedged_fetch(chain,breakers,query,limit,freshness=None,hedge_ms=700,ti
             for t in done:
                 p=pending.pop(t)
                 try:rows=t.result()
+                except RuntimeError as e:
+                    if str(e)=='web_busy':
+                        # A local thread-pool limit, not a provider failure: never touches that provider's breaker or claims
+                        # a query was sent to it, and hedging further would only queue behind the same saturated pool.
+                        local_busy=True
+                        if p.name in sent:sent.remove(p.name)
+                        log.warning('web fetch pool busy: skipped %s',p.name);continue
+                    rows=None;errored.add(p.name);log.warning('web provider %s failed reason=%s',p.name,type(e).__name__)
                 except Exception as e:rows=None;errored.add(p.name);log.warning('web provider %s failed reason=%s',p.name,type(e).__name__)
                 if rows:
                     breakers[p.name].ok()
                     for n in errored-{p.name}:breakers[n].fail()
                     return rows,{'provider':p.name,'hedged':hedged,'sent':list(dict.fromkeys(sent))}
                 if rows is not None:empties.add(p.name)
-            if nxt>=len(avail) and not pending and not retried and end-time.monotonic()>1.0:retried=True;avail.append(avail[0])  # one retry of a fast-failing/empty sole provider
-            if nxt<len(avail) and (not done or not pending):hedged=hedged or not done;launch()
+            if nxt>=len(avail) and not pending and not retried and not local_busy and end-time.monotonic()>1.0:retried=True;avail.append(avail[0])  # one retry of a fast-failing/empty sole provider
+            if nxt<len(avail) and (not done or not pending) and not local_busy:hedged=hedged or not done;launch()
+            elif local_busy and not pending:break
     finally:
         for t,p in pending.items():
             t.cancel()
@@ -176,7 +187,7 @@ async def hedged_fetch(chain,breakers,query,limit,freshness=None,hedge_ms=700,ti
     for n in errored:breakers[n].fail()
     for n in empties-errored:breakers[n].ok()
     if empties:return [],{'provider':sorted(empties)[0],'hedged':hedged,'empty':True,'sent':sent}
-    raise WebUnavailable('timeout' if time.monotonic()>=end else 'failed',sent)
+    raise WebUnavailable('web_busy' if local_busy and not errored else ('timeout' if time.monotonic()>=end else 'failed'),sent)
 
 class WebSearcher:
     """Cache + chain + breakers. Cache holds only public, cleaned results under a hashed query key (no user identity)."""

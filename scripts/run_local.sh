@@ -9,6 +9,7 @@ RUN="$ROOT/.run"; mkdir -p "$RUN" uploads
 [[ -d venv ]] || { echo "Missing venv: python3.12 -m venv venv && venv/bin/pip install -r backend/requirements.txt -c backend/constraints.txt"; exit 1; }
 set -a; . ./.env; set +a
 export UPLOAD_DIR="${UPLOAD_DIR:-$ROOT/uploads}"
+export API_PORT="${API_PORT:-8000}" WEB_PORT="${WEB_PORT:-5173}"  # read by vite.config.ts too, so a non-default port never needs editing frontend files
 
 wait_http() { for _ in $(seq 1 60); do curl -sf -m3 "$1" >/dev/null && return 0; sleep 2; done; echo "Timed out waiting for $1"; return 1; }
 pid_alive() { [[ -f "$RUN/$1.pid" ]] && kill -0 "$(cat "$RUN/$1.pid")" 2>/dev/null; }
@@ -34,21 +35,21 @@ start)
   # Port conflicts with other local containers are the most common failure.
   for _ in $(seq 1 30); do curl -sf -m3 "$QDRANT_URL/" | grep -q '"version"' && break; sleep 1; done
   curl -sf -m3 "$QDRANT_URL/" | grep -q '"version"' || { echo "Qdrant not reachable at $QDRANT_URL"; exit 1; }
-  pid_alive api || check_port api 8000; pid_alive web || check_port web 5173
-  start_bg api backend uvicorn app:app --host 0.0.0.0 --port 8000
+  pid_alive api || check_port api "$API_PORT"; pid_alive web || check_port web "$WEB_PORT"
+  start_bg api backend uvicorn app:app --host 0.0.0.0 --port "$API_PORT"
   start_bg worker backend celery -A tasks.celery worker --loglevel=INFO --pool=solo   # solo: prefork breaks on macOS
   [[ -d frontend/node_modules ]] || (cd frontend && npm install)
   start_bg web frontend npm run dev
-  wait_http http://localhost:8000/health
-  wait_http http://localhost:5173/
-  echo "API  http://localhost:8000/docs"; echo "UI   http://localhost:5173  (login: $ADMIN_USERNAME)"; echo "Logs $RUN/*.log";;
+  wait_http "http://localhost:$API_PORT/health"
+  wait_http "http://localhost:$WEB_PORT/"
+  echo "API  http://localhost:$API_PORT/docs"; echo "UI   http://localhost:$WEB_PORT  (login: $ADMIN_USERNAME)"; echo "Logs $RUN/*.log";;
 stop)
   for n in web worker api; do
     [[ -f "$RUN/$n.pid" ]] && { kill -TERM -- "-$(cat "$RUN/$n.pid")" 2>/dev/null || kill "$(cat "$RUN/$n.pid")" 2>/dev/null || true; rm -f "$RUN/$n.pid"; }
   done
   docker compose stop postgres qdrant redis;;
 status)
-  curl -sf http://localhost:8000/health && echo; curl -sfI http://localhost:5173/ | head -1; docker compose ps;;
+  curl -sf "http://localhost:$API_PORT/health" && echo; curl -sfI "http://localhost:$WEB_PORT/" | head -1; docker compose ps;;
 logs) tail -f "$RUN"/*.log;;
 *) echo "Usage: $0 {start|stop|status|logs}"; exit 1;;
 esac

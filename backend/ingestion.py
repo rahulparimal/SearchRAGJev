@@ -13,7 +13,14 @@ from providers import LocalEmbedder,QdrantVectors
 import extensions
 from cache import cache
 
-PROFILES={'narrative':420,'table_heavy':260,'code':320,'policy':500}
+# Word budgets per profile, sized to the embedding model's wordpiece limit, NOT just a proxy for length. Measured against
+# sentence-transformers/all-MiniLM-L6-v2 (max_seq_length=256 wordpieces): a 420-word narrative chunk tokenizes to ~450-460
+# wordpieces, so the SentenceTransformer silently truncates and discards roughly the back half of every chunk from the vector
+# dense search actually uses (BM25/FTS still see the full text; only the embedding was truncated). 200 words measured at
+# ~219 wordpieces for ordinary English prose, with headroom for text with more proper nouns / transliterations (more
+# subword splits per word). Table/code profiles keep a tighter margin since punctuation and short tokens also split more.
+PROFILES={'narrative':200,'table_heavy':130,'code':160,'policy':210}
+CHUNK_OVERLAP={'narrative':30,'table_heavy':20,'code':25,'policy':30}
 SUPPORTED={'.pdf','.docx','.txt','.md','.html'}
 
 def _jev(db):
@@ -56,8 +63,8 @@ def ingest_document(db,doc_id:str,embedder=None,store=None)->dict:
             chosen=_jev(db).decide({'title':doc.title,'sample':content},{'profile':{'type':'choice','instructions':'Classify the extracted document to choose a tested chunking profile.','criteria':{'narrative':'Prose and paragraphs','table_heavy':'Primarily tables or tabular data','code':'Code or technical listings','policy':'Policy or procedural sections','other':'None of these'}}}).get('profile',{}).get('choice','other')
             profile=chosen if chosen in PROFILES else 'narrative'
         extensions.run('post_extract',{'document_id':doc_id,'pages':len(pages),'profile':profile,'characters':len(content)})
-        chunker=StructureChunker(max_words=PROFILES[profile],overlap=65);records=[]
-        for page,text in pages:records.extend(chunker.split(text,page))
+        chunker=StructureChunker(max_words=PROFILES[profile],overlap=CHUNK_OVERLAP[profile])
+        records=chunker.split_document(pages)  # whole document as one stream: a sentence/short paragraph straddling a page break is never cut in two
         if not records:raise ValueError('No text extracted. OCR is not configured for scanned documents.')
         ids=[str(uuid.uuid5(uuid.NAMESPACE_URL,f'{doc_id}:{n}:{chunk}')) for n,(_,chunk) in enumerate(records)]
         extensions.run('pre_index',{'document_id':doc_id,'chunks':len(records),'profile':profile})

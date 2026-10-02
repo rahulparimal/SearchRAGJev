@@ -3,7 +3,8 @@ from datetime import datetime,timedelta,timezone
 from pathlib import Path
 from unittest import mock
 _tmp=tempfile.mkdtemp()
-os.environ['DATABASE_URL']=f'sqlite:///{_tmp}/t.db';os.environ['UPLOAD_DIR']=f'{_tmp}/up';os.environ.pop('WEB_SEARCH_ENABLED',None);os.environ.pop('REDIS_URL',None);os.environ.pop('WEB_PROVIDERS',None);os.environ.pop('BRAVE_API_KEY',None)
+os.environ['DATABASE_URL']=f'sqlite:///{_tmp}/t.db';os.environ['UPLOAD_DIR']=f'{_tmp}/up';os.environ['LOCAL_RERANKER_ENABLED']='false'  # avoids downloading/warming a real cross-encoder model in unit tests (network, and it's never 'ready' here anyway)
+os.environ.pop('WEB_SEARCH_ENABLED',None);os.environ.pop('REDIS_URL',None);os.environ.pop('WEB_PROVIDERS',None);os.environ.pop('BRAVE_API_KEY',None)
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'backend'))
 from fastapi import HTTPException
 from pydantic import ValidationError

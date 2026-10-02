@@ -12,10 +12,11 @@ async def collect(cases,cache,top_n,batch=None,chars=None):
     import app as A,jev as J
     from providers import QdrantVectors
     A.vectors=QdrantVectors();p=A.P('tune-reader','reader');j=J.AsyncJev(os.environ['TYPESAFE_API_KEY'],os.getenv('JEV_MODEL',''),os.getenv('JEV_BASE_URL',''),4000)
+    if not A.embedder.ready:A.embedder.warm()  # leg_dense() returns None (not []) while the embedder is still cold; this script calls it directly, outside the API's background warm-up
     from retrieval import reciprocal_rank_fusion,parse_weights
     for c in cases:
         if c['id'] in cache:continue
-        q=c['query'];permitted=A.permitted_for(p);bm=A.leg_bm25(q,permitted);fts=A.leg_fts(q,p);dense=A.leg_dense(q,permitted)
+        q=c['query'];permitted=A.permitted_for(p);bm=A.leg_bm25(q,permitted);fts=A.leg_fts(q,p);dense=A.leg_dense(q,permitted) or []
         if not (bm or fts) and dense and max(h.score for h in dense)<A.DENSE_ALONE:dense=[]
         fused,_=reciprocal_rank_fusion(dense,fts,bm,weights=parse_weights(os.getenv('RRF_WEIGHTS')));sel=A.load_local(fused,p,top_n)
         noul=await J.noul_scores_batch(j,q,[{'title':d.title,'text':ch.text} for _,ch,d in sel],None,4000,batch=batch,chars=chars)

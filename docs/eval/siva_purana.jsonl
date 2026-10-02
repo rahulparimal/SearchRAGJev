@@ -1,0 +1,13 @@
+{"id": "sp1", "query": "Why is Siva worshipped both in an image and in the phallic linga form?", "pages": [55, 59], "must_contain_any": ["phallus", "image", "linga"]}
+{"id": "sp2", "query": "Brahma as a swan and Vishnu as a boar search for the top and bottom of the fiery column of light", "pages": [59, 63], "must_contain_any": ["swan", "boar", "Omkara", "column"]}
+{"id": "sp3", "query": "What did the Ketaki flower say to Brahma?", "pages": [61, 66], "must_contain_any": ["Ketak", "flower"]}
+{"id": "sp4", "query": "What exists at the time of the Great Dissolution of the universe?", "pages": [198, 204], "must_contain_any": ["Dissolution", "dissolution"]}
+{"id": "sp5", "query": "How does repentance purify a sinner according to the glory of the Sivapurana?", "pages": [19, 23], "must_contain_any": ["repentance", "sin"]}
+{"id": "sp6", "query": "Visnu assumed the form of a boar to find the bottom of the column", "pages": [59, 63], "must_contain_any": ["boar", "Vi"]}
+{"id": "sp7", "query": "the lords of the devas went to Kailasa and saw Siva in the form of Omkara", "pages": [58, 62], "must_contain_any": ["Omkara", "Kailasa"]}
+{"id": "sp8", "query": "parental leave policy reimbursement vpn password", "pages": [], "must_contain_any": [], "negative_control": true}
+{"id": "sp9", "query": "Why does a deity usually get only a statue but Shiva gets both a statue and the lingam too?", "pages": [55, 59], "must_contain_any": ["phallus", "image", "linga"]}
+{"id": "sp10", "query": "What happens to everything in existence when the world finally comes to an end?", "pages": [198, 204], "must_contain_any": ["Dissolution", "dissolution"]}
+{"id": "sp11", "query": "Can feeling truly sorry for wrongdoing wash away a person's bad karma?", "pages": [19, 23], "must_contain_any": ["repentance", "sin"]}
+{"id": "sp12", "query": "A flower told a lie and got cursed for it by a god", "pages": [61, 66], "must_contain_any": ["Ketak", "flower"]}
+{"id": "sp13", "query": "two gods turned into animals to race along a pillar of fire to find its ends", "pages": [59, 63], "must_contain_any": ["swan", "boar", "Omkara", "column"]}

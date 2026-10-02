@@ -11,6 +11,30 @@ class ChunkingTests(unittest.TestCase):
   self.assertGreater(len(chunks),5)
   self.assertTrue(all(len(c.split())<=120 for _,c in chunks))
   a=set(chunks[0][1].split());b=set(chunks[1][1].split());self.assertGreaterEqual(len(a&b),15)
+ def test_chunk_boundaries_never_fall_mid_sentence(self):
+  """A PDF line-wrap (single \\n) must not force a chunk boundary mid-sentence; only a real sentence end should."""
+  sentences=[f'This is sentence number {i} about the ancient texts and their many teachings.' for i in range(40)]
+  # join with a mix of single newlines (typeset line wraps) at arbitrary points, simulating pypdf's per-line extraction
+  text='\n'.join(sentences)
+  chunks=StructureChunker(max_words=60,overlap=15).split(text,1)
+  self.assertGreater(len(chunks),3)
+  for _,c in chunks:
+   self.assertTrue(c.strip().endswith('.'),f'chunk does not end on a sentence boundary: {c[-40:]!r}')
+   self.assertTrue(c.strip()[0].isupper(),f'chunk does not start on a sentence boundary: {c[:40]!r}')
+ def test_short_paragraphs_are_packed_together_not_fragmented(self):
+  """Many short verse-like paragraphs (blank-line separated) below max_words should be packed into shared chunks, not
+  each becoming its own tiny chunk -- the buffer must not reset at every paragraph boundary."""
+  verses='\n\n'.join(f'{i}. This is verse number {i} of the text, a short teaching on dharma.' for i in range(20))
+  chunks=StructureChunker(max_words=60,overlap=10).split(verses,1)
+  self.assertLess(len(chunks),10)  # packed together, not ~20 one-verse chunks
+  self.assertTrue(all(len(c.split())<=60 for _,c in chunks))
+ def test_split_document_does_not_cut_a_sentence_at_a_page_boundary(self):
+  pages=[(1,'This sentence starts on page one and'),(2,'continues onto page two before it ends.')]
+  chunks=StructureChunker(max_words=100,overlap=10).split_document(pages)
+  self.assertEqual(len(chunks),1)
+  page,text=chunks[0]
+  self.assertEqual(page,1)  # starting page
+  self.assertIn('starts on page one and continues onto page two before it ends.',text)
  def test_overlap_cannot_make_next_paragraph_exceed_limit(self):
   text=' '.join(f'first{i}' for i in range(120))+'\n'+' '.join(f'second{i}' for i in range(115))
   chunks=StructureChunker(max_words=120,overlap=20).split(text,1)

@@ -50,11 +50,12 @@ class Cache:
                 return
             except Exception:self._fail()
         for k,v in items.items():self.set(k,v,ttl)
-    # async wrappers: the sync Redis client must never run on the event loop (bounded io executor instead)
-    async def aget(self,key):return await run_io(self.get,key)
-    async def aset(self,key,value,ttl):return await run_io(self.set,key,value,ttl)
-    async def aset_many(self,items,ttl):return await run_io(self.set_many,items,ttl)
-    async def aget_many(self,keys):return await run_io(self.get_many,keys)
+    # async wrappers: the sync Redis client must never run on the event loop (bounded io executor instead). `pool` defaults to
+    # the shared io pool but overview/quick-answer call sites pass run_ov so their cache I/O can never queue behind search's.
+    async def aget(self,key,pool=None):return await (pool or run_io)(self.get,key)
+    async def aset(self,key,value,ttl,pool=None):return await (pool or run_io)(self.set,key,value,ttl)
+    async def aset_many(self,items,ttl,pool=None):return await (pool or run_io)(self.set_many,items,ttl)
+    async def aget_many(self,keys,pool=None):return await (pool or run_io)(self.get_many,keys)
     def generation(self,name):
         """Current token for `name`, or None when Redis is unavailable (callers then fall back to scanning)."""
         r=self._redis()
@@ -72,5 +73,24 @@ class Cache:
             except Exception:self._fail()
         return t
     def local_generation(self,name):return self.gens.get(name,'0')
+    def incr(self,key,ttl):
+        """Atomic increment with an expiry set only on the FIRST increment (Redis INCR+EXPIRE NX); -> the new count. Used
+        for per-user rate limits that must survive process restarts. In-process LRU fallback is best-effort (not atomic
+        across threads, fine for a soft limit) and re-arms its own ttl the same way."""
+        r=self._redis()
+        if r:
+            try:
+                v=r.incr(key)
+                if v==1:r.expire(key,int(ttl))
+                return v
+            except Exception:self._fail()
+        with self.lock:
+            hit=self.lru.get(key)
+            if not hit or hit[0]<time.time():v=1;self.lru[key]=(time.time()+ttl,v)
+            else:v=hit[1]+1;self.lru[key]=(hit[0],v)
+            self.lru.move_to_end(key)
+            while len(self.lru)>self.size:self.lru.popitem(last=False)
+            return v
+    async def aincr(self,key,ttl,pool=None):return await (pool or run_io)(self.incr,key,ttl)
 
 cache=Cache()
