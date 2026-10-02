@@ -189,5 +189,53 @@ class DeepResearchTests(unittest.TestCase):
         with mock.patch.object(DR,'FETCH_PAGES',True),mock.patch.object(DR.webfetch,'fetch_pages',side_effect=fp):
             ev=collect(DR.stream_research('pages q',FakeWeb(),FakeJev(),FakeGen()))
         self.assertGreaterEqual(dict(ev)['report']['stats']['pages_fetched'],1)
+    def test_strip_think_removes_reasoning_blocks_even_unclosed(self):
+        self.assertEqual(DR._strip_think('<think>{x} ## no</think>## Summary\nok [S1].'),'## Summary\nok [S1].')
+        self.assertEqual(DR._strip_think('answer <think>never closed {'),'answer')
+    def _bad(self):return "## Summary\nNo cite. Another none. A third none. Fourth none. Fifth [S1]."
+    def test_repair_call_rescues_a_mostly_uncited_report_and_counts_three_llm_calls(self):
+        class G(FakeGen):
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+                if system is DR.REPAIR_SYSTEM:self.calls.append('repair');return '## Summary\nFixed claim [S1].'
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+        g=G(report=self._bad());ev=collect(DR.stream_research('repair q',FakeWeb(),FakeJev(),g))
+        rep=dict(ev)['report'];self.assertTrue(rep['stats']['repaired']);self.assertEqual(rep['stats']['llm_calls'],3);self.assertIn('repairing',[d['stage'] for n,d in ev if n=='status'])
+    def test_repair_that_is_not_better_is_discarded_and_gate_still_rejects(self):
+        g=FakeGen(report=self._bad());ev=collect(DR.stream_research('repair q2',FakeWeb(),FakeJev(),g))
+        self.assertEqual(dict(ev)['error']['reason'],'unsupported_claim');self.assertLessEqual(len(g.calls),3)
+    def test_repair_can_be_disabled(self):
+        g=FakeGen(report=self._bad())
+        with mock.patch.object(DR,'REPAIR',False):collect(DR.stream_research('repair q3',FakeWeb(),FakeJev(),g))
+        self.assertEqual(len(g.calls),2)  # plan + report only
+    def test_llm_calls_stat_is_honest_when_planner_is_skipped(self):
+        class J(FakeJev):
+            async def decide(self,state,questions,timeout_ms=None):
+                return {'complex':{'noul':0.0}} if 'complex' in questions else await super().decide(state,questions,timeout_ms)
+        ev=collect(DR.stream_research('simple honest q',FakeWeb(),J(),FakeGen()));self.assertEqual(dict(ev)['report']['stats']['llm_calls'],1)
+    def test_per_domain_cap_limits_a_single_site(self):
+        hits=[{'title':f'T{i}','url':f'https://same.example/{i}','domain':'same.example','text':'t'} for i in range(6)]
+        class W(FakeWeb):
+            async def search(self,q,limit=8,freshness=None):self.calls.append(q);return hits,{}
+        with mock.patch.object(DR,'MAX_PER_DOMAIN',2):ev=collect(DR.stream_research('cap domain',W(),FakeJev(),FakeGen()))
+        self.assertEqual(dict(ev)['report']['stats']['sources'],2)
+    def test_provider_paused_subquestion_is_retried_when_breakers_recover(self):
+        class W(FakeWeb):
+            def __init__(self):super().__init__();self.n=0
+            def breaker_states(self):self.n+=1;return {'ddgs':'open'} if self.n<=2 else {'ddgs':'closed'}
+        web=W();ev=collect(DR.stream_research('paused q',web,FakeJev(),FakeGen()))
+        self.assertIn('reflecting',[d['stage'] for n,d in ev if n=='status'])
+    def test_report_llm_failure_is_retried_once(self):
+        class G(FakeGen):
+            n=0
+            async def agenerate(self,system,user,max_tokens=None,total_s=None,attempt_s=None):
+                if system is DR.REPORT_SYSTEM:
+                    G.n+=1
+                    if G.n==1:raise RuntimeError('503')
+                return await super().agenerate(system,user,max_tokens,total_s,attempt_s)
+        ev=collect(DR.stream_research('retry q',FakeWeb(),FakeJev(),G()))
+        self.assertEqual(dict(ev)['report']['stats']['llm_calls'],3)  # plan + failed report + good report
+    def test_fallback_plan_searches_wider_than_a_normal_sub_question(self):
+        web=FakeWeb();collect(DR.stream_research('fallback q',web,FakeJev(),FakeGen(plan='not json')))
+        self.assertEqual(len(web.calls),2);self.assertIn('fallback q overview',web.calls)
 
 if __name__=='__main__':unittest.main()

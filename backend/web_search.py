@@ -69,7 +69,7 @@ def rank_hits(query:str,rows:list[dict],limit:int=8,fresh:bool=False,table=None)
 
 # ---- providers (sync .fetch, run in worker threads by the hedged fetcher) ----
 class DdgsProvider:
-    """ddgs with pinned engines (WEB_DDGS_BACKENDS, default yahoo,bing: measured ~0.6 s vs ~2.4 s for bing alone) so the query goes only where
+    """ddgs with pinned engines (WEB_DDGS_BACKENDS, default yahoo,duckduckgo: 'bing' is not an available ddgs engine in the pinned version, so the old default silently ran yahoo alone; measured ~0.6 s vs ~2.4 s for bing alone earlier) so the query goes only where
     the UI/admin text says; ddgs's default 'auto' fans out to Wikipedia plus random engines. Shared instance."""
     name='ddgs'
     def __init__(self,backends='yahoo,bing',timeout=3):self.backends=backends or 'yahoo,bing';self.timeout=timeout;self._d=None
@@ -115,8 +115,8 @@ def build_chain(get=os.getenv):
     for n in order:
         if n=='brave_api' and brave:chain.append(BraveApiProvider(brave))
         elif n=='searxng' and searx:chain.append(SearxngProvider(searx))
-        elif n=='ddgs':chain.append(DdgsProvider(get('WEB_DDGS_BACKENDS') or 'yahoo,bing'))
-    return chain or [DdgsProvider(get('WEB_DDGS_BACKENDS') or 'yahoo,bing')]
+        elif n=='ddgs':chain.append(DdgsProvider(get('WEB_DDGS_BACKENDS') or 'yahoo,duckduckgo'))
+    return chain or [DdgsProvider(get('WEB_DDGS_BACKENDS') or 'yahoo,duckduckgo')]
 def describe_chain(chain):
     names=[];[names.extend(p.engines) for p in chain]
     return ', '.join(dict.fromkeys(n.capitalize() if n.islower() else n for n in names))

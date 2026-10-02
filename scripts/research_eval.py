@@ -28,6 +28,16 @@ def run(base,token,query,timeout=330):
             elif line.startswith('data: '):events.append((name,json.loads(line[6:])))
     return events
 
+def stages(events):
+    """-> {stage: ms until the next stage began} from the status events (elapsed_ms is time since the run started)."""
+    marks=[(d['stage'],d['elapsed_ms']) for n,d in events or [] if n=='status']
+    end=next((d['elapsed_ms'] for n,d in reversed(events or []) if n=='done'),None)
+    out={}
+    for i,(st,t) in enumerate(marks):
+        nxt=marks[i+1][1] if i+1<len(marks) else end
+        if nxt is not None:out[st]=out.get(st,0)+nxt-t
+    return out
+
 def check(case,events):
     d=dict(events);problems=[]
     if 'report' not in d:return [f"no report (error={d.get('error')})"],None
@@ -62,7 +72,7 @@ def main():
         print(f"{'PASS' if not hard else 'FAIL'} {c['id']} {c['kind']} {time.time()-t0:.0f}s sources={st.get('sources')} verif={v.get('status')} {v.get('supported')}/{v.get('checked')} {problems or ''}")
         print(f"     rubric (check manually): {c['rubric']}")
         if a.out:
-            with open(a.out,'a') as f:f.write(json.dumps({'arm':a.arm,'id':c['id'],'kind':c['kind'],'ok':not hard,'seconds':round(time.time()-t0,1),'routed':(dict(ev).get('plan') or {}).get('routed') if ev else None,'llm_calls':st.get('llm_calls'),'sources':st.get('sources'),'domains':len({x['domain'] for x in rep['citations'] if x.get('domain')}) if rep else None,'verif':v.get('status'),'supported':v.get('supported'),'checked':v.get('checked'),'problems':problems})+'\n')
+            with open(a.out,'a') as f:f.write(json.dumps({'arm':a.arm,'id':c['id'],'kind':c['kind'],'ok':not hard,'seconds':round(time.time()-t0,1),'routed':(dict(ev).get('plan') or {}).get('routed') if ev else None,'llm_calls':st.get('llm_calls'),'sources':st.get('sources'),'domains':len({x['domain'] for x in rep['citations'] if x.get('domain')}) if rep else None,'verif':v.get('status'),'supported':v.get('supported'),'checked':v.get('checked'),'subqs':len((dict(ev).get('plan') or {}).get('subquestions') or []) if ev else None,'plan_fallback':(dict(ev).get('plan') or {}).get('fallback') if ev else None,'gaps':len(rep['gaps']) if rep else None,'repaired':st.get('repaired'),'gap_reasons':st.get('gap_reasons'),'stages':stages(ev),'problems':problems})+'\n')
         if a.show and rep:print(rep['markdown'],'\n')
     print(f'\n{len(cases)-bad}/{len(cases)} structurally clean. Structure is not factual quality: review the rubric by hand.')
     sys.exit(1 if bad else 0)

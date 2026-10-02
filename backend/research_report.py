@@ -101,7 +101,11 @@ def parse_report(markdown,n_sources):
                 for c in cells:
                     ns=sorted({n for n in (int(x) for x in CITE.findall(c)) if 1<=n<=n_sources})
                     row.append({'text':c,'cites':ns})
-                if any(c['cites'] for c in row):table_rows.append(row)
+                if any(c['cites'] for c in row):
+                    rc=sorted({n for c in row for n in c['cites']})
+                    for k,c in enumerate(row):  # an uncited value cell inherits its row's citations (and says so) so it still gets checked
+                        if k>0 and not c['cites'] and c['text'].strip(' -\u2013\u2014') and rc:c['cites']=rc;c['rowcited']=True
+                    table_rows.append(row)
                 else:stats['table_rows_dropped']+=1
             continue
         flush_table()

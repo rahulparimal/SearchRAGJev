@@ -74,5 +74,9 @@ class ParseReportTests(unittest.TestCase):
         md="## Summary\nA fact [S1].\n\n| A | B |\n|---|---|\n| x [S1] | y [S1] |\n| p [S1] | q [S1] |"
         out=to_markdown(parse_report(md,1),title='My Report')
         self.assertIn('# My Report',out);self.assertIn('## Summary',out);self.assertIn('A fact [S1].',out);self.assertIn('| x [S1] | y [S1] |',out)
+    def test_uncited_value_cells_inherit_row_citations_and_are_marked(self):
+        r=parse_report("## T\n| Item | A | B |\n|---|---|---|\n| X | one [S1] | two |\n| Y | three [S1] | four [S1] |\n",1)
+        cell=[b for b in r['blocks'] if b['t']=='table'][0]['rows'][0][2]
+        self.assertEqual(cell['cites'],[1]);self.assertTrue(cell['rowcited'])
 
 if __name__=='__main__':unittest.main()

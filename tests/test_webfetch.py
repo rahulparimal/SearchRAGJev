@@ -122,4 +122,17 @@ class FetchPagesTests(unittest.TestCase):
             aio(WF.fetch_pages([f'http://e{i}.example' for i in range(5)],10.0))
         self.assertEqual(len(calls),2)
 
+class RelevantExcerptTests(unittest.TestCase):
+    def test_short_text_is_returned_unchanged(self):
+        self.assertEqual(WF.relevant_excerpt('short text',"anything",100),'short text')
+    def test_picks_the_passage_that_matches_not_the_intro(self):
+        text=('Home About Contact navigation menu. '*40)+'Elasticsearch scales horizontally with sharding and replication across many nodes. '+('Footer legal notice. '*40)
+        out=WF.relevant_excerpt(text,'elasticsearch horizontal scaling sharding',600)
+        self.assertIn('sharding and replication',out);self.assertLessEqual(len(out),2000)
+    def test_no_query_terms_falls_back_to_the_start(self):
+        self.assertEqual(WF.relevant_excerpt('x '*2000,'the of and',300),('x '*2000)[:300])
+class FetchPagesKeepsLongTextTests(unittest.TestCase):
+    def test_extract_cap_is_larger_than_prompt_cap(self):
+        self.assertGreater(WF.PAGE_EXTRACT_CHARS,WF.PAGE_TEXT_CHARS)
+
 if __name__=='__main__':unittest.main()

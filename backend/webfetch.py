@@ -22,10 +22,11 @@ from ahttp import send
 from web_search import clean_text
 log=logging.getLogger('rag.webfetch')
 
-MAX_PAGES=int(os.getenv('DEEP_RESEARCH_MAX_PAGES','10'))
+MAX_PAGES=int(os.getenv('DEEP_RESEARCH_MAX_PAGES','20'))
 PAGE_MAX_BYTES=int(os.getenv('DEEP_RESEARCH_PAGE_MAX_BYTES',str(1_500_000)))
 PAGE_TIMEOUT_S=float(os.getenv('DEEP_RESEARCH_PAGE_TIMEOUT_S','6'))
 PAGE_TEXT_CHARS=int(os.getenv('DEEP_RESEARCH_PAGE_TEXT_CHARS','2500'))
+PAGE_EXTRACT_CHARS=int(os.getenv('DEEP_RESEARCH_PAGE_EXTRACT_CHARS','20000'))  # kept per page so the relevant part can be chosen, not just the intro
 MAX_REDIRECTS=3
 ALLOWED_TYPES=('text/html','text/plain','application/xhtml+xml')
 
@@ -107,7 +108,7 @@ async def fetch_page(url:str,deadline_s:float|None=None)->str|None:
             parser=_TextExtractor()
             try:parser.feed(text)
             except Exception:return None
-            extracted=clean_text(parser.text(),PAGE_TEXT_CHARS)
+            extracted=clean_text(parser.text(),PAGE_EXTRACT_CHARS)
             return extracted or None
         return None  # too many redirects
     except Exception:
@@ -122,3 +123,23 @@ async def fetch_pages(urls:list[str],deadline_s:float)->dict[str,str]:
         return u,t
     results=await asyncio.gather(*(one(u) for u in urls[:MAX_PAGES]))
     return {u:t for u,t in results if t}
+
+def relevant_excerpt(text:str,query:str,chars:int,win:int=500)->str:
+    """The parts of `text` that best match `query` (term overlap), up to ~`chars`, joined in original order. Pure function, no LLM.
+    Pages open with navigation and intros; claims are usually supported deeper in. Short texts are returned unchanged."""
+    from bm25 import content_terms,tokenize
+    text=text or ''
+    if len(text)<=chars:return text
+    q=content_terms(query)
+    if not q:return text[:chars]
+    step=max(100,win//2);wins=[(i,text[i:i+win]) for i in range(0,max(1,len(text)-win+step),step)]
+    scored=sorted(((sum(1 for t in set(tokenize(w)) if t in q),-i,i) for i,w in wins),reverse=True)
+    picked=[];used=0
+    for sc,_,i in scored:
+        if used+win>chars+win//2:break
+        if any(abs(i-j)<win for j in picked):continue
+        picked.append(i);used+=win
+        if used>=chars:break
+    if not picked:return text[:chars]
+    pad=win//4  # context on both sides so a matching sentence is not cut at the window edge
+    return ' ... '.join(text[max(0,i-pad):i+win+pad] for i in sorted(picked))

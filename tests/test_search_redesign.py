@@ -313,7 +313,7 @@ class WebUnits(unittest.TestCase):
         self.assertGreater(ws.domain_prior('en.wikipedia.org'),ws.domain_prior('random.example'));self.assertEqual(ws.domain_prior('x.nih.gov'),1.0);self.assertEqual(ws.domain_prior('pinterest.com'),0.0)
         with mock.patch.dict(os.environ,{'WEB_DOMAIN_PRIORS':'{"random.example":0.99}'}):self.assertEqual(ws.domain_prior('random.example',ws.priors()),0.99)
     def test_default_chain_pins_engines_and_names_providers(self):
-        c=ws.build_chain(lambda k:'');self.assertEqual([p.name for p in c],['ddgs']);self.assertEqual(c[0].engines,['yahoo','bing']);self.assertEqual(ws.describe_chain(c),'Yahoo, Bing')
+        c=ws.build_chain(lambda k:'');self.assertEqual([p.name for p in c],['ddgs']);self.assertEqual(c[0].engines,['yahoo','duckduckgo']);self.assertEqual(ws.describe_chain(c),'Yahoo, Duckduckgo')
         c=ws.build_chain({'BRAVE_API_KEY':'k'}.get);self.assertEqual([p.name for p in c],['brave_api','ddgs']);self.assertIn('Brave Search API',ws.describe_chain(c))
         c=ws.build_chain({'WEB_PROVIDERS':'searxng,ddgs','SEARXNG_URL':'http://s:8080'}.get);self.assertEqual([p.name for p in c],['searxng','ddgs'])
     def test_ddgs_receives_pinned_backend(self):
