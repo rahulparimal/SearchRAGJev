@@ -1,4 +1,20 @@
-# Atlas Search Jev
+# SearchRAGJev
+
+## Two editions
+
+This is the **Jev edition**. The project ships in two editions that share the same ideas (hybrid local search with per-document access control, citation-checked answers, Quick answer, Deep Research reports, history). Pick the one that fits your constraints.
+
+| | **SearchRAGJev** ([repo](https://github.com/rahulparimal/SearchRAGJev)) | **SearchRAGNoJev** ([repo](https://github.com/rahulparimal/SearchRAGNoJev)) |
+|---|---|---|
+| Decisions (routing, reranking, claim checking) | TypeSafe **Jev** API (needs a TypeSafe key; optional) | On-box models only (cross-encoder reranker, NLI claim checker, heuristics); no external key |
+| Services | Postgres, Qdrant, Redis, Celery worker, API, web | Postgres + pgvector, API (with an ingestion thread), web |
+| Search quality, benchmark nDCG@5 (58 queries, 2 passes, same corpus) | **0.920** | 0.854 (0.772 with no reranker at all) |
+| Search latency p50 / p95 | 45 / 267 ms (Jev scores are cached after the first pass) | 888 / 1306 ms (CPU cross-encoder, about 0.85 s per search) |
+| Relevance filter on out-of-corpus queries (76 cases) | 3% false positives, recall 0.96 | 3% false positives, recall 0.96 |
+| Operations | more moving parts, external API dependency | fewer parts, fully offline-capable apart from your LLM |
+
+Numbers are from one machine and one run per arm (see `docs/NOJEV_RESULTS.md` in the NoJev edition and `docs/DEEP_RESEARCH_EVALUATION.md` in this one); treat differences of a point or two as noise. Both editions need an OpenAI-compatible LLM endpoint (a hosted provider or a local Ollama) for Quick answer, AI Overview and Deep Research; plain search works without one.
+
 
 Atlas Search is a local first, modular document search and grounded answer application. It uses Jev for typed decisions, Sentence Transformers for embeddings, Qdrant for dense retrieval, PostgreSQL full text search for lexical retrieval, and a configurable OpenAI compatible endpoint for answer generation. Redis and Celery keep indexing work out of the interactive API path.
 

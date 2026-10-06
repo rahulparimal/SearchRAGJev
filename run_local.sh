@@ -6,7 +6,7 @@
 
 set -euo pipefail
 
-PROJECT_ROOT="/Users/rahul-pc/Documents/RAGJev/RAGSearchJev"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 cd "$PROJECT_ROOT"
 
 # Colors
